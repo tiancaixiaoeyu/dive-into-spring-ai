@@ -7,7 +7,7 @@ spring:
     redis:
       database: 0
       timeout: 10s
-      password: 123456
+      #password: 123456
       repositories:
         enabled: false
       lettuce:
@@ -20,11 +20,15 @@ spring:
           max-idle: 10
           # 连接池中的最小空闲连接
           min-idle: 0
-
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: tiancaixiaoeyu
   datasource:
     url: jdbc:mysql://localhost:3306/knowledge_base
     username: root
-    password: 123456
+    password: tiancaixiaoeyu
     driver-class-name: com.mysql.cj.jdbc.Driver
   ai:
     # 讯飞星火
@@ -41,7 +45,7 @@ spring:
           base-url: https://spark-api.xf-yun.com/v3.5/chat
     # 阿里灵积
     dash-scope:
-      api-key: xxx
+      api-key: sk-9b19e5ebca134c869a13a89fbb298f18
       enabled: true
       chat:
         model: qwen-max

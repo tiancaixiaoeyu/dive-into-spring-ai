@@ -9,15 +9,21 @@ export const request = axios.create({
 })
 request.interceptors.response.use(
   (res) => {
-    return res.data.result
+    if (res.data.code === 1) {
+      return res.data.result
+    }
+    return Promise.reject(res.data)
   },
-  ({ response }) => {
-    if (response.data.code !== 1) {
-      ElMessage.warning({ message: response.data.msg })
+  (error) => {
+    const response = error.response
+    if (response?.data) {
+      ElMessage.warning({ message: response.data.msg || '请求失败' })
+      if (response.data.code === 10012) {
+        router.push('/login')
+      }
+    } else {
+      ElMessage.error({ message: '网络错误' })
     }
-    if (response.data.code === 10012) {
-      router.push('/login')
-    }
-    return Promise.reject(response.data.result)
+    return Promise.reject(error)
   }
 )

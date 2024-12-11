@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.qifan777</groupId>
-    <artifactId>KnowledgeBaseChatSpringAI</artifactId>
+    <artifactId>dive-into-spring-ai</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <parent>
@@ -19,13 +19,40 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-ai.version>1.0.0-SNAPSHOT</spring-ai.version>
-        <uni-ai.version>0.1.5</uni-ai.version>
+        <spring-ai.version>1.0.0-M3</spring-ai.version>
+        <spring-ai-alibaba.version>1.0.0-M3.2</spring-ai-alibaba.version>
+        <uni-ai.version>0.1.9</uni-ai.version>
         <jimmer.version>0.8.134</jimmer.version>
         <hutool.version>5.8.25</hutool.version>
         <sa-token.version>1.37.0</sa-token.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
     <dependencies>
+
+   
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-symbol-solver-core</artifactId>
+            <version>3.26.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-neo4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-redis-store</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
@@ -36,33 +63,47 @@
             <version>${jimmer.version}</version>
         </dependency>
         <dependency>
+    <groupId>org.babyfish.jimmer</groupId>
+    <artifactId>jimmer-apt</artifactId>
+    <version>${jimmer.version}</version>
+    <scope>provided</scope>
+</dependency>
+        <dependency>
             <groupId>io.github.qifan777</groupId>
             <artifactId>spring-boot-starter-oss</artifactId>
         </dependency>
+        <!--      根据自己的需要开启响应厂商的配置-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.ai</groupId>-->
+        <!--            <artifactId>spring-ai-moonshot-spring-boot-starter</artifactId>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.ai</groupId>-->
+        <!--            <artifactId>spring-ai-qianfan-spring-boot-starter</artifactId>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.ai</groupId>-->
+        <!--            <artifactId>spring-ai-zhipuai-spring-boot-starter</artifactId>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.ai</groupId>-->
+        <!--            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.ai</groupId>-->
+        <!--            <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>-->
+        <!--        </dependency>-->
         <dependency>
-            <groupId>io.github.qifan777</groupId>
-            <artifactId>spring-ai-spark-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.qifan777</groupId>
-            <artifactId>spring-ai-kimi-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.qifan777</groupId>
-            <artifactId>spring-ai-dashscope-spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.qifan777</groupId>
-            <artifactId>spring-ai-qianfan-spring-boot-starter</artifactId>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter</artifactId>
+            <version>${spring-ai-alibaba.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-zhipuai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-tika-document-reader</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
-        </dependency>
+
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -115,16 +156,6 @@
         </dependencies>
     </dependencyManagement>
     <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
         <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>

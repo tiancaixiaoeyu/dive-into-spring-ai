@@ -1,0 +1,5 @@
+export io.github.qifan777.knowledge.ai.message.AiMessage
+AiMessageInput{
+#allScalars
+id(session)
+}
