@@ -6,7 +6,7 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
-public interface AiMessageRepository extends JRepository<AiMessage,String> {
+public interface AiMessageRepository extends JRepository<AiMessage, String> {
     AiMessageTable t = AiMessageTable.$;
 
     default List<AiMessage> findBySessionId(String sessionId, int lastN) {
@@ -19,8 +19,9 @@ public interface AiMessageRepository extends JRepository<AiMessage,String> {
                 .execute();
 
     }
-    default Integer deleteBySessionId(String sessionId){
-        sql().createDelete(t)
+
+    default Integer deleteBySessionId(String sessionId) {
+        return sql().createDelete(t)
                 .where(t.sessionId().eq(sessionId))
                 .execute();
 
