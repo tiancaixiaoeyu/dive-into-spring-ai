@@ -2,6 +2,7 @@ package io.github.qifan777.knowledge.ai.aiMessage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.qifan777.knowledge.ai.aiMessage.dto.AiMessageInput;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,33 @@ import java.util.Map;
 @AllArgsConstructor
 @Slf4j
 public class AiMessageController{
-//    @PostMapping
-//    public void  save(@RequestBody)
+  private final AiMessageRepository aiMessageRepository;
+  private final AiMessageChatMemory chatMemory;
+  private final ChatModel chatModel;
+
+
+    @PostMapping
+    public void  save(@RequestBody AiMessageInput input){
+        aiMessageRepository.save(input.toEntity());
+
+    }
+    @PostMapping(value = "chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input){
+        var  advisor =new MessageChatMemoryAdvisor(chatMemory,input.getSessionId(),10);
+        return ChatClient.create(chatModel).prompt()
+                .user(promptUserSpec -> {
+                    Message message = AiMessageChatMemory.toMessage(input.toEntity());
+                    promptUserSpec.text(input.getTextContent());
+                    if (!CollectionUtils.isEmpty(input.getMedias())) {
+                        Media[] media = input.getMedias().toArray(new Media[0]);
+                        promptUserSpec.media(media);
+                    }
+    }).advisors(advisor)
+                .stream()
+                .content()
+                .map(content -> ServerSentEvent.<String>builder(content)
+                    .event("message").build());
+            }
+
+
 }

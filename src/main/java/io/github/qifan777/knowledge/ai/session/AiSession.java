@@ -1,6 +1,6 @@
 package io.github.qifan777.knowledge.ai.session;
 
-import io.github.qifan777.knowledge.ai.aiMessage.AiMessage;
+import io.github.qifan777.knowledge.ai.message.AiMessage;
 import io.github.qifan777.knowledge.infrastructure.jimmer.BaseEntity;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.OneToMany;

@@ -31,7 +31,7 @@ public class AiMessageChatMemory implements ChatMemory {
 
     public List<Message> get(String conversationId, int lastN){
 
-        return aiMessageRepository.findBySessionId(conversationId,lastN).stream().map(this::toMessage).toList();
+        return aiMessageRepository.findBySessionId(conversationId,lastN).stream().map(AiMessageChatMemory::toMessage).toList();
 
     }
 
@@ -39,8 +39,8 @@ public class AiMessageChatMemory implements ChatMemory {
     public void clear(String conversationId) {
 aiMessageRepository.deleteBySessionId(conversationId);
     }
-    public   Message toMessage (AiMessage aiMessage){
-        List<Media> mediaList=aiMessage.medias().stream().map(this::toMedia).toList();
+    public  static Message toMessage (AiMessage aiMessage){
+        List<Media> mediaList=aiMessage.medias().stream().map(AiMessageChatMemory::toMedia).toList();
         return new DefaultMessage(aiMessage.type(),aiMessage.textContent(),mediaList) ;
     }
 
@@ -49,7 +49,7 @@ aiMessageRepository.deleteBySessionId(conversationId);
 
 
     @SneakyThrows
-    public Media toMedia(AiMessage.Media media){
+    public static Media toMedia(AiMessage.Media media){
         return new Media(MimeType.valueOf(media.getType()), new URL(media.getData()));
 
     }
