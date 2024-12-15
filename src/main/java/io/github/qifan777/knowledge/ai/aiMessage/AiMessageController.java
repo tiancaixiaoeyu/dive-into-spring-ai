@@ -40,6 +40,10 @@ public class AiMessageController{
   private final AiMessageChatMemory chatMemory;
   private final ChatModel chatModel;
 
+@DeleteMapping ("history/{sessionId}")
+ public void deleteHistory(@PathVariable String sessionId){
+    aiMessageRepository.deleteBySessionId(sessionId);
+}
 
     @PostMapping
     public void  save(@RequestBody AiMessageInput input){
@@ -51,10 +55,12 @@ public class AiMessageController{
         var  advisor =new MessageChatMemoryAdvisor(chatMemory,input.getSessionId(),10);
         return ChatClient.create(chatModel).prompt()
                 .user(promptUserSpec -> {
-                    Message message = AiMessageChatMemory.toMessage(input.toEntity());
+
                     promptUserSpec.text(input.getTextContent());
                     if (!CollectionUtils.isEmpty(input.getMedias())) {
-                        Media[] media = input.getMedias().toArray(new Media[0]);
+                        Message message = AiMessageChatMemory.toMessage(input.toEntity());
+                        Media[] media = new Media[input.getMedias().size()];
+                        media = input.getMedias().toArray(media);
                         promptUserSpec.media(media);
                     }
     }).advisors(advisor)

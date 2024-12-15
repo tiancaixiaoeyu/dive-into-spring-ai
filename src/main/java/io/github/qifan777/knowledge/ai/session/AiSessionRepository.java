@@ -1,7 +1,7 @@
 package io.github.qifan777.knowledge.ai.session;
 
 import cn.dev33.satoken.stp.StpUtil;
-import io.github.qifan777.knowledge.ai.message.AiMessageFetcher;
+import io.github.qifan777.knowledge.ai.aiMessage.AiMessageFetcher;
 import org.babyfish.jimmer.spring.repository.JRepository;
 
 import java.util.List;
