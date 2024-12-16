@@ -10,10 +10,12 @@ import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.model.Media;
 import org.springframework.data.redis.connection.DefaultMessage;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 @Repository
@@ -40,7 +42,9 @@ public class AiMessageChatMemory implements ChatMemory {
 aiMessageRepository.deleteBySessionId(conversationId);
     }
     public  static Message toMessage (AiMessage aiMessage){
-        List<Media> mediaList=aiMessage.medias().stream().map(AiMessageChatMemory::toMedia).toList();
+        List<Media> mediaList= new ArrayList<>();
+        if (!CollectionUtils.isEmpty(aiMessage.medias())) {
+            mediaList= aiMessage.medias().stream().map(AiMessageChatMemory::toMedia).toList();}
         return new DefaultMessage(aiMessage.type(),aiMessage.textContent(),mediaList) ;
     }
 

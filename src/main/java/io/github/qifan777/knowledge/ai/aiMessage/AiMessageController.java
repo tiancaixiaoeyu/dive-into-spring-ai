@@ -1,5 +1,6 @@
 package io.github.qifan777.knowledge.ai.aiMessage;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.qifan777.knowledge.ai.aiMessage.dto.AiMessageInput;
@@ -20,6 +21,7 @@ import org.springframework.ai.model.Media;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -29,7 +31,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+import org.babyfish.jimmer.client.EnableImplicitApi;
+
+@EnableImplicitApi
 
 @RequestMapping("message")
 @RestController
@@ -46,16 +52,23 @@ public class AiMessageController{
 }
 
     @PostMapping
-    public void  save(@RequestBody AiMessageInput input){
-        aiMessageRepository.save(input.toEntity());
-
+    public void  save(@RequestBody AiMessageInput input) {
+        LocalDateTime now = LocalDateTime.now();
+        AiMessage message = AiMessageDraft.$.produce(draft -> {
+            draft.setCreatedTime(now);
+            draft.setEditedTime(now);
+            draft.setType(input.getType());
+            draft.setTextContent(input.getTextContent());
+            draft.setMedias(input.getMedias());
+            draft.applySession(session -> session.setId(input.getSessionId()));
+        });
+        aiMessageRepository.save(message);
     }
     @PostMapping(value = "chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input){
-        var  advisor =new MessageChatMemoryAdvisor(chatMemory,input.getSessionId(),10);
+    public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input) {
+        var advisor = new MessageChatMemoryAdvisor(chatMemory, input.getSessionId(), 10);
         return ChatClient.create(chatModel).prompt()
                 .user(promptUserSpec -> {
-
                     promptUserSpec.text(input.getTextContent());
                     if (!CollectionUtils.isEmpty(input.getMedias())) {
                         Message message = AiMessageChatMemory.toMessage(input.toEntity());
@@ -63,12 +76,27 @@ public class AiMessageController{
                         media = input.getMedias().toArray(media);
                         promptUserSpec.media(media);
                     }
-    }).advisors(advisor)
+                }).advisors(advisor)
                 .stream()
-                .content()
-                .map(content -> ServerSentEvent.<String>builder(content)
-                    .event("message").build());
-            }
+                .chatResponse()
+                .handle((response, sink) -> {
+
+                    try {
+                        sink.next(ServerSentEvent.<String>builder(toJson(response))
+                                .event("message")
+                                .build());
+                    } catch (JsonProcessingException e) {
+                        sink.error(new RuntimeException(e));
+                    }
+                });
+    }
 
 
+    @Autowired
+    private ObjectMapper objectMapper;
+    public String toJson(ChatResponse chatResponse) throws JsonProcessingException {
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        return objectMapper.writeValueAsString(chatResponse);
+    }
 }
+
