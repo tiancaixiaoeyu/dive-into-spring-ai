@@ -73,13 +73,16 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
   if (message.image) {
     medias.push({ type: 'image', data: message.image })
   }
+  const now = new Date().toISOString(); 
   // 用户的提问
   const chatMessage = {
     id: new Date().getTime().toString(),
     sessionId: activeSession.value.id,
     medias,
     textContent: message.text,
-    type: 'USER'
+    type: 'USER',
+    createdTime: now, // 添加创建时间
+    editedTime: now   // 添加编辑时间
   } satisfies AiMessage
 
   responseMessage.value = {
@@ -88,6 +91,7 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.id
+    
   }
   // const body: AiMessageWrapper = { message: chatMessage, params: options.value }
   // const form = new FormData()
@@ -108,7 +112,7 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     const response = JSON.parse(event.data) as ChatResponse
     const finishReason = response.result.metadata.finishReason
     if (response.result.output.content) {
-      responseMessage.value.textContent += response.result.output.content
+      responseMessage.value.textContent+= response.result.output.content
       // 滚动到底部
       await nextTick(() => {
         messageListRef.value?.scrollTo(0, messageListRef.value.scrollHeight)
@@ -182,7 +186,7 @@ const handleSessionCreate = () => {
             </div>
             <!-- 否则正常显示标题 -->
             <div v-else class="title">{{ activeSession.name }}</div>
-            <div class="description">{}条对话</div>
+            <div class="description">{{ activeSession.messages.length }}条对话</div>
           </div>
           <!-- 尾部的编辑按钮 -->
           <div class="rear">

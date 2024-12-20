@@ -1,5 +1,6 @@
 package io.github.qifan777.knowledge.ai.aiMessage;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,6 +35,8 @@ import reactor.core.publisher.Flux;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.springframework.ai.chat.messages.MessageType;
+import org.springframework.transaction.annotation.Transactional;
 
 @EnableImplicitApi
 
@@ -64,33 +67,59 @@ public class AiMessageController{
         });
         aiMessageRepository.save(message);
     }
+    // 
     @PostMapping(value = "chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input) {
-        var advisor = new MessageChatMemoryAdvisor(chatMemory, input.getSessionId(), 10);
-        return ChatClient.create(chatModel).prompt()
-                .user(promptUserSpec -> {
-                    promptUserSpec.text(input.getTextContent());
-                    if (!CollectionUtils.isEmpty(input.getMedias())) {
-                        Message message = AiMessageChatMemory.toMessage(input.toEntity());
-                        Media[] media = new Media[input.getMedias().size()];
-                        media = input.getMedias().toArray(media);
-                        promptUserSpec.media(media);
-                    }
-                }).advisors(advisor)
-                .stream()
-                .chatResponse()
-                .handle((response, sink) -> {
+public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input) {
+    // 在进入异步流之前获取用户信息
+    String loginId = StpUtil.getLoginIdAsString();
+    LocalDateTime now = LocalDateTime.now();
+    
+    var advisor = new MessageChatMemoryAdvisor(chatMemory, input.getSessionId(), 10);
+    return ChatClient.create(chatModel).prompt()
+            .user(promptUserSpec -> {
+                promptUserSpec.text(input.getTextContent());
+                if (!CollectionUtils.isEmpty(input.getMedias())) {
+                    Message message = AiMessageChatMemory.toMessage(input.toEntity());
+                    Media[] media = new Media[input.getMedias().size()];
+                    media = input.getMedias().toArray(media);
+                    promptUserSpec.media(media);
+                }
+            }).advisors(advisor)
+            .stream()
+            .chatResponse()
+            .handle((response, sink) -> {
+                try {
+//                    // 创建消息实体，手动设置所有必需的字段
+//                    AiMessage assistantMessage = AiMessageDraft.$.produce(draft -> {
+//                        draft.setCreatedTime(now);
+//                        draft.setEditedTime(now);
+//                        draft.setType(MessageType.ASSISTANT);
+//                        draft.setTextContent(response.getResult().getOutput().getContent());
+//                        draft.setMedias(null);
+//                        draft.applySession(session -> session.setId(input.getSessionId()));
+//
+//                        // 手动设置创建者和编辑者信息
+//                        draft.setCreatorId(loginId);
+//                        draft.setEditorId(loginId);
+//                    });
+//
+//                    // 使用 @Transactional 注解的方法来保存消息
+//                    saveAssistantMessage(assistantMessage);
 
-                    try {
-                        sink.next(ServerSentEvent.<String>builder(toJson(response))
-                                .event("message")
-                                .build());
-                    } catch (JsonProcessingException e) {
-                        sink.error(new RuntimeException(e));
-                    }
-                });
-    }
+                    sink.next(ServerSentEvent.<String>builder(toJson(response))
+                            .event("message")
+                            .build());
+                } catch (JsonProcessingException e) {
+                    sink.error(new RuntimeException(e));
+                }
+            });
+}
 
+// 添加一个新的事务方法来保存消息
+@Transactional
+public void saveAssistantMessage(AiMessage message) {
+    aiMessageRepository.save(message);
+}
 
     @Autowired
     private ObjectMapper objectMapper;
