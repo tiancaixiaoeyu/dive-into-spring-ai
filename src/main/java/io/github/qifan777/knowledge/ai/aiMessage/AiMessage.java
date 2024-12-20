@@ -26,6 +26,7 @@ public interface AiMessage extends BaseEntity {
      * 消息内容
      */
     String textContent();
+    
 
     @Serialized
     @Null

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.qifan777.knowledge.ai.aiMessage.dto.AiMessageInput;
+import io.github.qifan777.knowledge.ai.aiMessage.dto.AiMessageWrapper;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.transaction.annotation.Transactional;
 
 @EnableImplicitApi
 
@@ -48,6 +48,8 @@ public class AiMessageController{
   private final AiMessageRepository aiMessageRepository;
   private final AiMessageChatMemory chatMemory;
   private final ChatModel chatModel;
+    private final VectorStore vectorStore;
+    private final ObjectMapper objectMapper;
 
 @DeleteMapping ("history/{sessionId}")
  public void deleteHistory(@PathVariable String sessionId){
@@ -68,64 +70,93 @@ public class AiMessageController{
         aiMessageRepository.save(message);
     }
     // 
+    /**
+     * 为了支持文件问答，需要同时接收json（AiMessageWrapper json体）和 MultipartFile（文件）
+     * Content-Type 从 application/json 修改为 multipart/form-data
+     * 之前接收请求参数是用@RequestBody, 现在使用@RequestPart 接收json字符串再手动转成AiMessageWrapper.
+     * SpringMVC的@RequestPart是支持自动将Json字符串转换为Java对象，也就是说可以等效`@RequestBody`，
+     * 但是由于前端FormData无法设置Part的Content-Type，所以只能手动转json字符串再转成Java对象。
+     *
+     * @param input 消息包含文本信息，会话id，多媒体信息（图片语言）。参考src/main/dto/AiMessage.dto
+     * @param file  文件问答
+     * @return SSE流
+     */
+    @SneakyThrows
     @PostMapping(value = "chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-public Flux<ServerSentEvent<String>> chat(@RequestBody AiMessageInput input) {
-    // 在进入异步流之前获取用户信息
-    String loginId = StpUtil.getLoginIdAsString();
-    LocalDateTime now = LocalDateTime.now();
-    
-    var advisor = new MessageChatMemoryAdvisor(chatMemory, input.getSessionId(), 10);
-    return ChatClient.create(chatModel).prompt()
-            .user(promptUserSpec -> {
-                promptUserSpec.text(input.getTextContent());
-                if (!CollectionUtils.isEmpty(input.getMedias())) {
-                    Message message = AiMessageChatMemory.toMessage(input.toEntity());
-                    Media[] media = new Media[input.getMedias().size()];
-                    media = input.getMedias().toArray(media);
-                    promptUserSpec.media(media);
-                }
-            }).advisors(advisor)
-            .stream()
-            .chatResponse()
-            .handle((response, sink) -> {
-                try {
-//                    // 创建消息实体，手动设置所有必需的字段
-//                    AiMessage assistantMessage = AiMessageDraft.$.produce(draft -> {
-//                        draft.setCreatedTime(now);
-//                        draft.setEditedTime(now);
-//                        draft.setType(MessageType.ASSISTANT);
-//                        draft.setTextContent(response.getResult().getOutput().getContent());
-//                        draft.setMedias(null);
-//                        draft.applySession(session -> session.setId(input.getSessionId()));
-//
-//                        // 手动设置创建者和编辑者信息
-//                        draft.setCreatorId(loginId);
-//                        draft.setEditorId(loginId);
-//                    });
-//
-//                    // 使用 @Transactional 注解的方法来保存消息
-//                    saveAssistantMessage(assistantMessage);
+    public Flux<ServerSentEvent<String>> chat(@RequestPart String input, @RequestPart(required = false) MultipartFile file) {
+        AiMessageWrapper aiMessageWrapper = objectMapper.readValue(input, AiMessageWrapper.class);
 
-                    sink.next(ServerSentEvent.<String>builder(toJson(response))
-                            .event("message")
-                            .build());
-                } catch (JsonProcessingException e) {
-                    sink.error(new RuntimeException(e));
-                }
-            });
-}
+        return ChatClient.create(chatModel).prompt()
+                // 启用文件问答
+                .system(promptSystemSpec -> useFile(promptSystemSpec, file))
+                .user(promptUserSpec -> toPrompt(promptUserSpec, aiMessageWrapper.getMessage()))
 
-// 添加一个新的事务方法来保存消息
-@Transactional
-public void saveAssistantMessage(AiMessage message) {
-    aiMessageRepository.save(message);
-}
 
-    @Autowired
-    private ObjectMapper objectMapper;
-    public String toJson(ChatResponse chatResponse) throws JsonProcessingException {
-        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        return objectMapper.writeValueAsString(chatResponse);
+                .advisors(advisorSpec -> {
+                    // 使用历史消息
+                    useChatHistory(advisorSpec, aiMessageWrapper.getMessage().getSessionId());
+                    // 使用向量数据库
+                    useVectorStore(advisorSpec, aiMessageWrapper.getParams().getEnableVectorStore());
+                })
+                .stream()
+                .chatResponse()
+                .map(chatResponse -> ServerSentEvent.builder(toJson(chatResponse))
+                        // 和前端监听的事件相对应
+                        .event("message")
+                        .build());
     }
-}
 
+    @SneakyThrows
+    public String toJson(ChatResponse response) {
+        return objectMapper.writeValueAsString(response);
+    }
+
+    public void toPrompt(ChatClient.PromptUserSpec promptUserSpec, AiMessageInput input) {
+        // AiMessageInput转成Message
+        Message message = AiMessageChatMemory.toMessage(input.toEntity());
+        if (message instanceof UserMessage userMessage &&
+                !CollectionUtils.isEmpty(userMessage.getMedia())) {
+            // 用户发送的图片/语言
+            Media[] medias = new Media[userMessage.getMedia().size()];
+            promptUserSpec.media(userMessage.getMedia().toArray(medias));
+        }
+        // 用户发送的文本
+        promptUserSpec.text(message.getContent());
+    }
+
+    public void useChatHistory(ChatClient.AdvisorSpec advisorSpec, String sessionId) {
+        // 1. 如果需要存储会话和消息到数据库，自己可以实现ChatMemory接口，这里使用自己实现的AiMessageChatMemory，数据库存储。
+        // 2. 传入会话id，MessageChatMemoryAdvisor会根据会话id去查找消息。
+        // 3. 只需要携带最近10条消息
+        // MessageChatMemoryAdvisor会在消息发送给大模型之前，从ChatMemory中获取会话的历史消息，然后一起发送给大模型。
+        advisorSpec.advisors(new MessageChatMemoryAdvisor(chatMemory, sessionId, 10));
+    }
+
+    public void useVectorStore(ChatClient.AdvisorSpec advisorSpec, Boolean enableVectorStore) {
+        if (!enableVectorStore) return;
+        // question_answer_context是一个占位符，会替换成向量数据库中查询到的文档。QuestionAnswerAdvisor会替换。
+        String promptWithContext = """
+                下面是上下文信息
+                ---------------------
+                {question_answer_context}
+                ---------------------
+                给定的上下文和提供的历史信息，而不是事先的知识，回复用户的意见。如果答案不在上下文中，告诉用户你不能回答这个问题。
+                """;
+        advisorSpec.advisors(new QuestionAnswerAdvisor(vectorStore, SearchRequest.defaults(), promptWithContext));
+    }
+
+    @SneakyThrows
+    public void useFile(ChatClient.PromptSystemSpec spec, MultipartFile file) {
+        if (file == null) return;
+        String content = new TikaDocumentReader(new InputStreamResource(file.getInputStream())).get().get(0).getContent();
+        Message message = new PromptTemplate("""
+                已下内容是额外的知识，在你回答问题时可以参考下面的内容
+                ---------------------
+                {context}
+                ---------------------
+                """)
+                .createMessage(Map.of("context", content));
+        spec.text(message.getContent());
+    }
+
+}

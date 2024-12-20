@@ -10,7 +10,7 @@ import { type AiMessage, useChatStore } from './store/chat-store'
 import { SSE } from 'sse.js'
 import MessageRow from '@/views/chat/components/message-row.vue'
 import MessageInput from '@/views/chat/components/message-input.vue'
-//import type { AiMessageParams, AiMessageWrapper } from '@/apis/__generated/model/static'
+import type { AiMessageParams, AiMessageWrapper } from '@/apis/__generated/model/static'
 
 type ChatResponse = {
   metadata: {
@@ -59,7 +59,7 @@ const responseMessage = ref<AiMessage>({
   id: new Date().getTime().toString(),
   type: 'ASSISTANT',
   medias: [],
-  textContent: '',
+  textContent: 'multipart/form-data',
   sessionId: ''
 })
 
@@ -68,12 +68,14 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     ElMessage.warning('请创建会话')
     return
   }
+  
+  
   // 图片/语音
   const medias: AiMessage['medias'] = []
   if (message.image) {
     medias.push({ type: 'image', data: message.image })
   }
-  const now = new Date().toISOString(); 
+  const now = new Date().toISOString()
   // 用户的提问
   const chatMessage = {
     id: new Date().getTime().toString(),
@@ -81,8 +83,8 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     medias,
     textContent: message.text,
     type: 'USER',
-    createdTime: now, // 添加创建时间
-    editedTime: now   // 添加编辑时间
+    createdTime: new Date().toISOString(),  // 添加这行
+    editedTime: new Date().toISOString()    // 添加这行
   } satisfies AiMessage
 
   responseMessage.value = {
@@ -91,28 +93,32 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     type: 'ASSISTANT',
     textContent: '',
     sessionId: activeSession.value.id
-    
   }
-  // const body: AiMessageWrapper = { message: chatMessage, params: options.value }
-  // const form = new FormData()
-  // form.set('input', JSON.stringify(body))
-  //
-  // if (fileList.value.length && fileList.value[0].raw) {
-  //   form.append('file', fileList.value[0].raw)
-  // }
+  const body: AiMessageWrapper = { message: chatMessage, params: options.value }
+ 
+  const form = new FormData()
+  // 将消息对象转换为JSON字符串
+  form.append('input', JSON.stringify({
+    message: chatMessage,
+    params: options.value
+  }))
+  
+  if (fileList.value.length && fileList.value[0].raw) {
+    form.append('file', fileList.value[0].raw)
+  }
   const evtSource = new SSE(API_PREFIX + '/message/chat', {
     withCredentials: true,
     // 禁用自动启动，需要调用stream()方法才能发起请求
     start: false,
-    headers: { 'Content-Type': 'application/json' }, // 添加请求头
-    payload: JSON.stringify(chatMessage),
+   
+    payload: form,
     method: 'POST'
   })
   evtSource.addEventListener('message', async (event: any) => {
     const response = JSON.parse(event.data) as ChatResponse
     const finishReason = response.result.metadata.finishReason
     if (response.result.output.content) {
-      responseMessage.value.textContent+= response.result.output.content
+      responseMessage.value.textContent += response.result.output.content
       // 滚动到底部
       await nextTick(() => {
         messageListRef.value?.scrollTo(0, messageListRef.value.scrollHeight)
@@ -138,6 +144,20 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
 const handleSessionCreate = () => {
   chatStore.handleCreateSession({ name: '新的聊天' })
 }
+const options = ref<AiMessageParams>({
+  enableVectorStore: false,
+  enableAgent: false
+})
+const embeddingLoading = ref(false)
+const onUploadSuccess = () => {
+  embeddingLoading.value = false
+  ElMessage.success('上传成功')
+}
+const beforeUpload: UploadProps['beforeUpload'] = () => {
+  embeddingLoading.value = true
+  return true
+}
+const fileList = ref<UploadUserFile[]>([])
 </script>
 
 <template>
@@ -215,34 +235,24 @@ const handleSessionCreate = () => {
         <!--         监听发送事件 -->
         <message-input @send="handleSendMessage" v-if="activeSession"></message-input>
       </div>
-      <!--      <div class="option-panel">-->
-      <!--        <el-form size="small">-->
-      <!--          <el-form-item>-->
-      <!--            <el-upload-->
-      <!--              v-loading="embeddingLoading"-->
-      <!--              :action="`${API_PREFIX}/document/embedding`"-->
-      <!--              :show-file-list="false"-->
-      <!--              :on-success="onUploadSuccess"-->
-      <!--              :before-upload="beforeUpload"-->
-      <!--            >-->
-      <!--              <el-button type="primary">上传文档</el-button>-->
-      <!--            </el-upload>-->
-      <!--          </el-form-item>-->
-      <!--          <el-form-item label="知识库">-->
-      <!--            <el-switch v-model="options.enableVectorStore"></el-switch>-->
-      <!--          </el-form-item>-->
-      <!--          <el-form-item label="agent（智能体）">-->
-      <!--            <el-switch v-model="options.enableAgent"></el-switch>-->
-      <!--          </el-form-item>-->
-      <!--          <el-form-item label="文件">-->
-      <!--            <div class="upload">-->
-      <!--              <el-upload v-model:file-list="fileList" :auto-upload="false" :limit="1">-->
-      <!--                <el-button type="primary">上传文本文件</el-button>-->
-      <!--              </el-upload>-->
-      <!--            </div>-->
-      <!--          </el-form-item>-->
-      <!--        </el-form>-->
-      <!--      </div>-->
+      <div class="option-panel">
+        <el-form size="small">
+          <el-form-item>
+            <el-upload
+              v-loading="embeddingLoading"
+              :action="`${API_PREFIX}/document/embedding`"
+              :show-file-list="false"
+              :on-success="onUploadSuccess"
+              :before-upload="beforeUpload"
+            >
+              <el-button type="primary">上传文档</el-button>
+            </el-upload>
+          </el-form-item>
+          <el-form-item label="知识库">
+            <el-switch v-model="options.enableVectorStore"></el-switch>
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>

@@ -14,6 +14,15 @@ export type AiSession = Pick<
 
 export type AiMessage = Pick<AiMessageInput, 'textContent' | 'medias' | 'type' | 'sessionId'> & {
   id: string
+  sessionId: string
+  medias: Array<{
+    type: string
+    data: string
+  }>
+  textContent: string
+  type: 'USER' | 'ASSISTANT'
+  createdTime?: string  // 添加这行，使用可选属性
+  editedTime?: string   // 添加这行，使用可选属性
 }
 export const useChatStore = defineStore('ai-chat', () => {
   const isEdit = ref(false)
