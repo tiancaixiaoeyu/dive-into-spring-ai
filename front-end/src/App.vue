@@ -8,8 +8,9 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
     <router-view v-slot="{ Component }">
       <transition name="slide">
         <component :is="Component" />
-      </transition> </router-view
-  ></el-config-provider>
+      </transition>
+    </router-view>
+  </el-config-provider>
 </template>
 
 <style>

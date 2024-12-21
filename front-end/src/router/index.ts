@@ -18,8 +18,10 @@ const router = createRouter({
     },
     {
       path: '/',
-      component: ChatView
-    },  ]
+      name: 'chat',
+      component: () => import('@/views/chat/chat-view.vue') // 使用异步导入
+    }
+  ]
 })
 
 export default router
