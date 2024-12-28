@@ -14,7 +14,7 @@ import {
 import { onMounted, reactive, ref, Transition } from 'vue'
 import logo from '@/assets/logo.jpg'
 import router from '@/router'
-import background from '@/assets/background.jpg'
+import background from '@/assets/Background.jpg'
 import { api } from '@/utils/api-instance'
 import type { UserLoginInput } from '@/apis/__generated/model/static'
 

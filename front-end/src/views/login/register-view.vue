@@ -14,7 +14,7 @@ import {
 import { reactive, ref } from 'vue'
 import logo from '@/assets/logo.jpg'
 import router from '@/router'
-import background from '@/assets/background.jpg'
+import background from '@/assets/Background.jpg'
 import { api } from '@/utils/api-instance'
 import type { UserRegisterInput } from '@/apis/__generated/model/static'
 import { assertFormValidate } from '@/utils/common'

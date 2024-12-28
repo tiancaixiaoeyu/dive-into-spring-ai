@@ -1,6 +1,8 @@
 package io.github.qifan777.knowledge.infrastructure.config;
 
 import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
+
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.springframework.ai.autoconfigure.vectorstore.redis.RedisVectorStoreAutoConfiguration;
 import org.springframework.ai.autoconfigure.vectorstore.redis.RedisVectorStoreProperties;
@@ -13,6 +15,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisPooled;
+import lombok.extern.slf4j.Slf4j;  // 添加日志注解
+import org.springframework.context.annotation.Lazy;
+@Slf4j  // 添加这个注解
 
 @Configuration
 // 禁用SpringAI提供的RedisStack向量数据库的自动配置，会和Redis的配置冲突。
@@ -21,6 +26,7 @@ import redis.clients.jedis.JedisPooled;
 @EnableConfigurationProperties({RedisVectorStoreProperties.class})
 @AllArgsConstructor
 public class RedisVectorConfig {
+
 
     /**
      * 创建RedisStack向量数据库
@@ -42,3 +48,4 @@ public class RedisVectorConfig {
                 properties.isInitializeSchema());
     }
 }
+
