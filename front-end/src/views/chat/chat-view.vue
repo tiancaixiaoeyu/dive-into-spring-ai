@@ -401,8 +401,33 @@ import { type AiMessage, useChatStore } from './store/chat-store'
 import MessageRow from '@/views/chat/components/message-row.vue'
 import MessageInput from '@/views/chat/components/message-input.vue'
 import { SSE } from 'sse.js'
+import { useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
 // import type { AiMessageParams, AiMessageWrapper } from '@/apis/__generated/model/static'
+// 在setup中添加
+const router = useRouter()
 
+const handleLogout = () => {
+  // 这里可以添加清除token等登出逻辑
+ 
+  ElMessageBox.confirm(
+    '确定要退出登录吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      localStorage.removeItem('token')
+      router.push('/login')
+    })
+    .catch(() => {
+      // 用户点击取消
+    })
+  
+}
 type ChatResponse = {
   metadata: {
     usage: {
@@ -584,6 +609,12 @@ const fileList = ref<UploadUserFile[]>([])
             @click="handleSessionCreate"
             >创建会话
           </el-button>
+          <el-button
+      type="danger"
+      size="small"
+      @click="handleLogout"
+      >退出登录
+    </el-button>
         </div>
       </div>
 
@@ -955,3 +986,4 @@ const fileList = ref<UploadUserFile[]>([])
   }
 }
 </style>
+
