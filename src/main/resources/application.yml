@@ -105,7 +105,13 @@ server:
     max-swallow-size: 100MB  # 设置 Tomcat 的最大吞吐量
   port: 9902
     
-
+websocket:
+  allowed-origins: "*"
+  mvc:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: "*"
+      allowed-headers: "*"
 
 
 

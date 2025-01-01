@@ -587,6 +587,13 @@ const fileList = ref<UploadUserFile[]>([])
 
 <template>
   <div class="home-view">
+   
+    <div class="nav-bar">
+      <el-menu mode="horizontal" :router="true" style="width: 100%">
+        <el-menu-item index="/">AI 助手</el-menu-item>
+        <el-menu-item index="/chatroom">公共聊天室</el-menu-item>
+      </el-menu>
+    </div>
     <div class="chat-panel" v-loading="loading">
       <div class="session-panel">
         <div class="title">Agent4U</div>
@@ -803,7 +810,17 @@ const fileList = ref<UploadUserFile[]>([])
 //     }
 //   }
 // }
+.nav-bar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .home-view {
+  padding-top: 60px; 
   width: 100vw;
   height: 100vh;
   display: flex;

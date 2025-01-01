@@ -36,6 +36,7 @@ onMounted(() => {
 const handleLogin = async () => {
   const res = await api.userController.login({ body: loginForm })
   localStorage.setItem('token', res.tokenValue)
+  localStorage.setItem('userId', res.loginId) // 改用 loginId
   await router.replace({ path: '/' })
 }
 </script>
