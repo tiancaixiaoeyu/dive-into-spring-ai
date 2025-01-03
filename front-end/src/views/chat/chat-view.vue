@@ -592,6 +592,7 @@ const fileList = ref<UploadUserFile[]>([])
       <el-menu mode="horizontal" :router="true" style="width: 100%">
         <el-menu-item index="/">AI 助手</el-menu-item>
         <el-menu-item index="/chatroom">公共聊天室</el-menu-item>
+        <el-menu-item index="/profile">个人中心</el-menu-item>
       </el-menu>
     </div>
     <div class="chat-panel" v-loading="loading">

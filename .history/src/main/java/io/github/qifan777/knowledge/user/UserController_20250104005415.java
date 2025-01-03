@@ -80,7 +80,7 @@ public class UserController {
                .nickname(user.nickname())
                .avatar(user.avatar())
                .phone(user.phone())
-               .password(user.password()));
+               .build());
     }
 
     @PutMapping("/password")
@@ -90,14 +90,14 @@ public class UserController {
                 .orElseThrow(() -> new BusinessException("用户不存在"));
         
         // 验证旧密码是否正确
-        if (!BCrypt.checkpw(passwordUpdateDTO.getOldPassword(), user.password())) {
+        if (!BCrypt.checkpw(passwordUpdateDTO.oldPassword(), user.password())) {
             throw new BusinessException("原密码不正确");
         }
 
         // 更新密码
         userRepository.update(UserDraft.$.produce(draft -> {
             draft.setId(userId)
-                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.getNewPassword()))
+                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.newPassword()))
                     .setPhone(user.phone())
                     .setNickname(user.nickname())
                     .setAvatar(user.avatar());

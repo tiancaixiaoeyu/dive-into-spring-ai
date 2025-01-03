@@ -25,6 +25,14 @@ const router = createRouter({
       path: '/chatroom',
       name: 'chatroom',
       component: () => import('@/views/chatroom/ChatRoomView.vue') // 使用异步导入
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('@/views/profile/profile-view.vue'),
+      meta: {
+        requiresAuth: true
+      }
     }
   ]
 })

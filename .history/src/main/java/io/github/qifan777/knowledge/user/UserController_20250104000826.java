@@ -5,17 +5,17 @@ import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import io.github.qifan777.knowledge.user.dto.UserLoginInput;
 import io.github.qifan777.knowledge.user.dto.UserRegisterInput;
+import io.github.qifan777.knowledge.user.dto.PasswordUpdateDTO;
+import io.github.qifan777.knowledge.user.dto.UserUpdateInput;
 import io.qifan.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
-import org.babyfish.jimmer.client.meta.Api;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
 
-@Api
 @RequestMapping("user")
 @RestController
 @AllArgsConstructor
@@ -53,67 +53,36 @@ public class UserController {
         return StpUtil.getTokenInfo();
     }
 
-    @PutMapping
-    public void updateUser(@RequestBody User userDTO) {
-        String userId = StpUtil.getLoginIdAsString();
-        if (!userId.equals(userDTO.id())) {
-            throw new BusinessException("无权修改其他用户信息");
-        }
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
-        userRepository.update(UserDraft.$.produce(draft -> {
-            draft.setId(userId)
-                    .setNickname(userDTO.nickname())
-                    .setAvatar(userDTO.avatar())
-                    .setPhone(existingUser.phone())
-                    .setPassword(existingUser.password());
-        }));
-    }
-
-    @GetMapping("/info")
-    public User userInfo() {
-       String userId = StpUtil.getLoginIdAsString();
-       User user = userRepository.findById(userId, UserRepository.FETCHER)
-               .orElseThrow(() -> new BusinessException("用户不存在"));
-      return UserDraft.$.produce(draft -> draft
-               .id(user.id())
-               .nickname(user.nickname())
-               .avatar(user.avatar())
-               .phone(user.phone())
-               .password(user.password()));
-    }
-
-    @PutMapping("/password")
-    public void updatePassword(@RequestBody PasswordUpdateDTO passwordUpdateDTO) {
-        String userId = StpUtil.getLoginIdAsString();
-        User user = userRepository.findById(userId)
+    @PutMapping("password")
+    public void updatePassword(@RequestBody PasswordUpdateDTO input) {
+        User user = userRepository.findById(StpUtil.getLoginIdAsString())
                 .orElseThrow(() -> new BusinessException("用户不存在"));
         
-        // 验证旧密码是否正确
-        if (!BCrypt.checkpw(passwordUpdateDTO.getOldPassword(), user.password())) {
-            throw new BusinessException("原密码不正确");
+        if (!BCrypt.checkpw(input.getOldPassword(), user.password())) {
+            throw new BusinessException("原密码错误");
         }
-
-        // 更新密码
-        userRepository.update(UserDraft.$.produce(draft -> {
-            draft.setId(userId)
-                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.getNewPassword()))
-                    .setPhone(user.phone())
-                    .setNickname(user.nickname())
-                    .setAvatar(user.avatar());
+        
+        userRepository.save(UserDraft.$.produce(user, draft -> {
+            draft.setPassword(BCrypt.hashpw(input.getNewPassword()));
         }));
     }
 
     @DeleteMapping
     public void deleteAccount() {
         String userId = StpUtil.getLoginIdAsString();
+        userRepository.deleteById(userId);
+        StpUtil.logout();
+    }
+
+    @PutMapping
+    public void updateUser(@RequestBody UserUpdateInput input) {
+        String userId = StpUtil.getLoginIdAsString();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("用户不存在"));
-        
-        // 删除用户
-        userRepository.deleteById(userId);
-        
-        // 注销登录
-        StpUtil.logout();
+                
+        userRepository.save(UserDraft.$.produce(user, draft -> {
+            draft.setNickname(input.getNickname());
+            draft.setAvatar(input.getAvatar());
+        }));
     }
 }

@@ -8,7 +8,3 @@ input UserRegisterInput{
     phone
     password
 }
-input UserUpdateInput {
-    nickname
-    avatar
-}

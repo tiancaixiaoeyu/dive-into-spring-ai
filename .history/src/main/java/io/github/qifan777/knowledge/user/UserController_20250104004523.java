@@ -54,7 +54,7 @@ public class UserController {
     }
 
     @PutMapping
-    public void updateUser(@RequestBody User userDTO) {
+    public void updateUser(@RequestBody UserDTO userDTO) {
         String userId = StpUtil.getLoginIdAsString();
         if (!userId.equals(userDTO.id())) {
             throw new BusinessException("无权修改其他用户信息");
@@ -71,16 +71,16 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public User userInfo() {
+    public UserDTO userInfo() {
        String userId = StpUtil.getLoginIdAsString();
        User user = userRepository.findById(userId, UserRepository.FETCHER)
                .orElseThrow(() -> new BusinessException("用户不存在"));
-      return UserDraft.$.produce(draft -> draft
+       return UserDTO.builder()
                .id(user.id())
                .nickname(user.nickname())
                .avatar(user.avatar())
                .phone(user.phone())
-               .password(user.password()));
+               .build();
     }
 
     @PutMapping("/password")
@@ -90,14 +90,14 @@ public class UserController {
                 .orElseThrow(() -> new BusinessException("用户不存在"));
         
         // 验证旧密码是否正确
-        if (!BCrypt.checkpw(passwordUpdateDTO.getOldPassword(), user.password())) {
+        if (!BCrypt.checkpw(passwordUpdateDTO.oldPassword(), user.password())) {
             throw new BusinessException("原密码不正确");
         }
 
         // 更新密码
         userRepository.update(UserDraft.$.produce(draft -> {
             draft.setId(userId)
-                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.getNewPassword()))
+                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.newPassword()))
                     .setPhone(user.phone())
                     .setNickname(user.nickname())
                     .setAvatar(user.avatar());
@@ -106,14 +106,6 @@ public class UserController {
 
     @DeleteMapping
     public void deleteAccount() {
-        String userId = StpUtil.getLoginIdAsString();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
-        
-        // 删除用户
-        userRepository.deleteById(userId);
-        
-        // 注销登录
-        StpUtil.logout();
+        // 实现删除账号的逻辑
     }
 }
