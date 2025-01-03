@@ -1,16 +1,15 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useChatRoomStore } from './store/chatroom-store'
 import { storeToRefs } from 'pinia'
 import MessageRow from '../chat/components/message-row.vue'
 
 import { ElMessage } from 'element-plus'
 const chatRoomStore = useChatRoomStore()
-const { activeRoom } = storeToRefs(chatRoomStore)
+const { activeRoom, onlineCount } = storeToRefs(chatRoomStore)
 const messageInput = ref<HTMLTextAreaElement>()
-const onlineCount = ref(0)
-const userId = localStorage.getItem('userId')
 const messageText = ref('')
+const userId = localStorage.getItem('userId')
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -18,6 +17,13 @@ const router = useRouter()
 const navigateTo = (path: string) => {
   router.push(path)
 }
+
+// 监听在线用户数变化
+watch(() => activeRoom.value?.users, (newUsers) => {
+  if (newUsers) {
+    onlineCount.value = newUsers.length
+  }
+}, { deep: true })
 
 // 解析 JSON 字符串并提取 content 字段
 const getMessageContent = (content: string): string => {
@@ -60,6 +66,7 @@ onUnmounted(() => {
       <el-menu mode="horizontal" style="width: 100%">
         <el-menu-item index="ai-assistant" @click="navigateTo('/')">AI 助手</el-menu-item>
         <el-menu-item index="chatroom" @click="navigateTo('/chatroom')">公共聊天室</el-menu-item>
+        <el-menu-item index="profile" @click="navigateTo('/profile')">个人中心</el-menu-item>
       </el-menu>
     </div>
     <div class="chat-panel">

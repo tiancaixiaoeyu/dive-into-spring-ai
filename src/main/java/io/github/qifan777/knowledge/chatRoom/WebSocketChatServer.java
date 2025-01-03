@@ -45,6 +45,8 @@ public class WebSocketChatServer {
                 ChatMessage.MessageType.JOIN
             );
             broadcastToRoom(roomId, joinMessage);
+              // 广播在线人数
+        broadcastOnlineCount(roomId);
         } catch (Exception e) {
             log.error("WebSocket连接错误", e);
         }
@@ -77,6 +79,28 @@ public class WebSocketChatServer {
                     LocalDateTime.now().toString(),
                     ChatMessage.MessageType.LEAVE
             ));
+            // 广播在线人数
+            broadcastOnlineCount(roomId);
+        }
+    }
+    // 在现有代码基础上添加广播在线人数的方法
+    private void broadcastOnlineCount(String roomId) {
+        try {
+            Map<String, Session> roomUsers = roomSessions.get(roomId);
+            int onlineCount = roomUsers != null ? roomUsers.size() : 0;
+            
+            ChatMessage countMessage = new ChatMessage(
+                UUID.randomUUID().toString(),
+                "system",
+                "system",
+                String.valueOf(onlineCount),
+                LocalDateTime.now().toString(),
+                ChatMessage.MessageType.ONLINE_COUNT
+            );
+            
+            broadcastToRoom(roomId, countMessage);
+        } catch (Exception e) {
+            log.error("广播在线人数时发生错误", e);
         }
     }
 

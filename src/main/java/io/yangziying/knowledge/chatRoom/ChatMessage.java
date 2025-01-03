@@ -18,6 +18,7 @@ public class ChatMessage {
     public enum MessageType {
         CHAT,    // 聊天消息
         JOIN,    // 加入消息
-        LEAVE    // 离开消息
+        LEAVE,   // 离开消息
+        ONLINE_COUNT // 在线人数
     }
 }

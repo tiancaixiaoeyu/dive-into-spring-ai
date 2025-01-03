@@ -19,12 +19,16 @@ interface ChatRoom {
 export const useChatRoomStore = defineStore('chatroom', () => {
   const activeRoom = ref<ChatRoom | null>(null)
   const ws = ref<WebSocket | null>(null)
+  const onlineCount = ref(0)  // 添加在线人数状态
 
   const initWebSocket = (roomId: string, userId: string) => {
+      // 如果已经有活动房间且ID相同，保留现有消息
+      if (!activeRoom.value || activeRoom.value.id !== roomId) {
     activeRoom.value = {
       id: roomId,
       users: [userId],
       messages: []
+    }
     }
 
     ws.value = new WebSocket(`ws://localhost:9902/ws/chat/room/${roomId}?userId=${userId}`)
@@ -37,8 +41,13 @@ export const useChatRoomStore = defineStore('chatroom', () => {
       try {
         const data = JSON.parse(event.data)
         console.log('收到消息:', data)
-
-        if (activeRoom.value) {
+        if (data.type === 'ONLINE_COUNT') {
+          // 更新在线人数
+          onlineCount.value = parseInt(data.content)
+      } else if (activeRoom.value) {
+               // 检查消息是否已存在，避免重复
+               const messageExists = activeRoom.value.messages.some(msg => msg.id === data.id)
+               if (!messageExists) {
           activeRoom.value.messages.push({
             id: data.id,
             userId: data.userId,
@@ -47,6 +56,7 @@ export const useChatRoomStore = defineStore('chatroom', () => {
             timestamp: data.timestamp,
             type: data.type
           })
+        }
         }
       } catch (error) {
         console.error('消息处理错误:', error)
@@ -85,6 +95,7 @@ export const useChatRoomStore = defineStore('chatroom', () => {
     activeRoom,
     initWebSocket,
     sendMessage,
-    closeConnection
+    closeConnection,
+    onlineCount
   }
 })
