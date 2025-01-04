@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/utils/api-instance'
 import { useRouter } from 'vue-router'
@@ -29,13 +29,8 @@ const uploadHeaders = computed(() => {
 // 定义上传地址
 const uploadUrl = `${import.meta.env.VITE_API_PREFIX}/oss/upload`
 
-onMounted(async () => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return
-  }
-
+// 在组件初始化时获取用户信息
+const initUserInfo = async () => {
   try {
     const res = await api.userController.userInfo()
     userInfo.value = res
@@ -44,6 +39,11 @@ onMounted(async () => {
   } catch (error) {
     ElMessage.error('获取用户信息失败')
   }
+}
+
+// 在组件挂载时获取用户信息
+onMounted(() => {
+  initUserInfo()
 })
 
 const handleAvatarSuccess = async (response: any) => {
@@ -51,10 +51,17 @@ const handleAvatarSuccess = async (response: any) => {
     await api.userController.updateAvatar({
       body: response.url
     })
-
+    
+    // 更新成功后重新获取用户信息
     const res = await api.userController.userInfo()
     userInfo.value = res
     avatarUrl.value = response.url
+    
+    // 强制更新组件
+    if (typeof nextTick === 'function') {
+      await nextTick()
+    }
+    
     ElMessage.success('头像更新成功')
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || '头像更新失败')
@@ -161,7 +168,10 @@ const deleteAccount = async () => {
           name="file"
         >
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          
+          
+          <el-icon v-else class="avatar-uploader-icon"><Plus />
+            </el-icon>
         </el-upload>
         <div class="upload-tip">点击上传头像</div>
       </div>

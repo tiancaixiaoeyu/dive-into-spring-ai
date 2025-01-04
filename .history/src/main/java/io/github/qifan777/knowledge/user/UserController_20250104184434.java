@@ -57,47 +57,27 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public User updateUser(@RequestBody User userDTO) {
+    public void updateUser(@RequestBody User userDTO) {
         String userId = StpUtil.getLoginIdAsString();
         log.info("开始更新用户信息，用户ID: {}, 更新数据: {}", userId, userDTO);
         try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            if (userDTO.phone() != null) {
-                                draft.setPhone(userDTO.phone());
-                            }
-                            if (userDTO.nickname() != null) {
-                                draft.setNickname(userDTO.nickname());
-                            }
-                            if (userDTO.avatar() != null) {
-                                draft.setAvatar(userDTO.avatar());
-                            }
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            if (!userId.equals(userDTO.id())) {
+                log.warn("用户 {} 尝试修改其他用户 {} 的信息", userId, userDTO.id());
+                throw new BusinessException("无权修改其他用户信息");
+            }
+            
+            User existingUser = userRepository.findById(userId, FETCHER)
+                    .orElseThrow(() -> new BusinessException("用户不存在"));
+            
+            userRepository.save(UserDraft.$.produce(existingUser, draft -> {
+                draft.setNickname(userDTO.nickname())
+                      .setAvatar(userDTO.avatar())
+                      .setGender(userDTO.gender());
+            }));
+            
+            log.info("用户信息更新成功，用户ID: {}", userId);
         } catch (Exception e) {
             log.error("更新用户信息失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    @PutMapping("/avatar")
-    public User updateAvatar(@RequestBody String avatarUrl) {
-        String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户头像，用户ID: {}, 头像URL: {}", userId, avatarUrl);
-        try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            draft.setAvatar(avatarUrl);
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
-        } catch (Exception e) {
-            log.error("更新用户头像失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
             throw e;
         }
     }

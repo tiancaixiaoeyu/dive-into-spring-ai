@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/utils/api-instance'
 import { useRouter } from 'vue-router'
@@ -14,28 +14,10 @@ const oldPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
-// 使用 computed 属性来处理 headers
-const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return {}
-  }
-  return {
-    Authorization: token
-  }
-})
-
 // 定义上传地址
 const uploadUrl = `${import.meta.env.VITE_API_PREFIX}/oss/upload`
 
 onMounted(async () => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return
-  }
-
   try {
     const res = await api.userController.userInfo()
     userInfo.value = res
@@ -48,12 +30,14 @@ onMounted(async () => {
 
 const handleAvatarSuccess = async (response: any) => {
   try {
-    await api.userController.updateAvatar({
-      body: response.url
+    await api.userController.updateUser({
+      body: {
+        id: userInfo.value?.id,
+        avatar: response.url,
+        nickname: userInfo.value?.nickname,
+        phone: userInfo.value?.phone
+      }
     })
-
-    const res = await api.userController.userInfo()
-    userInfo.value = res
     avatarUrl.value = response.url
     ElMessage.success('头像更新成功')
   } catch (error: any) {
@@ -78,9 +62,10 @@ const updateNickname = async () => {
 
     console.log('准备更新的数据:', updateData)
 
-    await api.userController.updateUser({
+    const response = await api.userController.updateUser({
       body: updateData
     })
+    console.log('更新响应:', response)
 
     const res = await api.userController.userInfo()
     userInfo.value = res
@@ -157,8 +142,6 @@ const deleteAccount = async () => {
           :action="uploadUrl"
           :show-file-list="false"
           :on-success="handleAvatarSuccess"
-          :headers="uploadHeaders"
-          name="file"
         >
           <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
           <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>

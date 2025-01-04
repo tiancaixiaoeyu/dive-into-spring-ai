@@ -48,6 +48,7 @@ onMounted(async () => {
 
 const handleAvatarSuccess = async (response: any) => {
   try {
+    console.log('准备更新头像，URL:', response.url)
     await api.userController.updateAvatar({
       body: response.url
     })
@@ -57,6 +58,7 @@ const handleAvatarSuccess = async (response: any) => {
     avatarUrl.value = response.url
     ElMessage.success('头像更新成功')
   } catch (error: any) {
+    console.error('头像更新失败:', error)
     ElMessage.error(error.response?.data?.message || '头像更新失败')
   }
 }
@@ -160,8 +162,7 @@ const deleteAccount = async () => {
           :headers="uploadHeaders"
           name="file"
         >
-          <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          <el-avatar :size="100" :src="avatarUrl || userInfo?.avatar" @error="() => true" />
         </el-upload>
         <div class="upload-tip">点击上传头像</div>
       </div>

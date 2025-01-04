@@ -51,7 +51,7 @@ const handleAvatarSuccess = async (response: any) => {
     await api.userController.updateAvatar({
       body: response.url
     })
-
+    
     const res = await api.userController.userInfo()
     userInfo.value = res
     avatarUrl.value = response.url

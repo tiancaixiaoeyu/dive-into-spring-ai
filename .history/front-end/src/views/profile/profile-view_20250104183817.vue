@@ -48,12 +48,14 @@ onMounted(async () => {
 
 const handleAvatarSuccess = async (response: any) => {
   try {
-    await api.userController.updateAvatar({
-      body: response.url
+    await api.userController.updateUser({
+      body: {
+        id: userInfo.value?.id,
+        avatar: response.url,
+        nickname: userInfo.value?.nickname,
+        phone: userInfo.value?.phone
+      }
     })
-
-    const res = await api.userController.userInfo()
-    userInfo.value = res
     avatarUrl.value = response.url
     ElMessage.success('头像更新成功')
   } catch (error: any) {

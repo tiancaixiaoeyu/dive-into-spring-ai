@@ -153,12 +153,9 @@ jimmer:
     openapi:
       path: /openapi
       ui-path: /openapi-ui
-logging:
+      logging:
   level:
     io.github.qifan777.knowledge: DEBUG
     org.springframework.web: INFO
   file:
     name: logs/application.log
-
-upload:
-  path: ${user.dir}/uploads

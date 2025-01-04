@@ -33,8 +33,7 @@ import java.util.Optional;
 public interface UserRepository extends JRepository<User, String> {
 
     // 使用 UserFetcher 定义 Fetcher，抓取所有标量字段
-    Fetcher<User> FETCHER = UserFetcher.$.allScalarFields()
-    .avatar(); 
+    Fetcher<User> FETCHER = UserFetcher.$.allScalarFields();
 
     // UserTable 别名
     UserTable t = UserTable.$;

@@ -159,6 +159,3 @@ logging:
     org.springframework.web: INFO
   file:
     name: logs/application.log
-
-upload:
-  path: ${user.dir}/uploads

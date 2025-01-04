@@ -56,50 +56,23 @@ public class UserController {
         return StpUtil.getTokenInfo();
     }
 
-    @PutMapping("/update")
-    public User updateUser(@RequestBody User userDTO) {
-        String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户信息，用户ID: {}, 更新数据: {}", userId, userDTO);
-        try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            if (userDTO.phone() != null) {
-                                draft.setPhone(userDTO.phone());
-                            }
-                            if (userDTO.nickname() != null) {
-                                draft.setNickname(userDTO.nickname());
-                            }
-                            if (userDTO.avatar() != null) {
-                                draft.setAvatar(userDTO.avatar());
-                            }
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
-        } catch (Exception e) {
-            log.error("更新用户信息失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    @PutMapping("/avatar")
-    public User updateAvatar(@RequestBody String avatarUrl) {
-        String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户头像，用户ID: {}, 头像URL: {}", userId, avatarUrl);
-        try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            draft.setAvatar(avatarUrl);
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
-        } catch (Exception e) {
-            log.error("更新用户头像失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
-        }
+    @PutMapping
+    public User updateUser(@RequestBody User user) {
+        log.info("开始更新用户信息，用户ID: {}, 更新数据: {}", user.getId(), user);
+        return userRepository.findById(user.getId())
+                .map(existingUser -> {
+                    return UserDraft.$.produce(existingUser, draft -> {
+                        if (user.getPhone() != null) {
+                            draft.setPhone(user.getPhone());
+                        }
+                        if (user.getNickname() != null) {
+                            draft.setNickname(user.getNickname());
+                        }
+                        // 保持原有的 avatar 值
+                        draft.setAvatar(existingUser.getAvatar());
+                    });
+                })
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
     }
 
     @GetMapping("/info")

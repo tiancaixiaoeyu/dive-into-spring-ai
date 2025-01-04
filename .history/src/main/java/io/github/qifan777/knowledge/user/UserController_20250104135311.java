@@ -8,7 +8,6 @@ import io.github.qifan777.knowledge.user.dto.UserLoginInput;
 import io.github.qifan777.knowledge.user.dto.UserRegisterInput;
 import io.qifan.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.babyfish.jimmer.client.meta.Api;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 
-@Slf4j
 @Api
 @RequestMapping("user")
 @RestController
@@ -56,50 +54,21 @@ public class UserController {
         return StpUtil.getTokenInfo();
     }
 
-    @PutMapping("/update")
-    public User updateUser(@RequestBody User userDTO) {
+    @PutMapping
+    public void updateUser(@RequestBody User userDTO) {
         String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户信息，用户ID: {}, 更新数据: {}", userId, userDTO);
-        try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            if (userDTO.phone() != null) {
-                                draft.setPhone(userDTO.phone());
-                            }
-                            if (userDTO.nickname() != null) {
-                                draft.setNickname(userDTO.nickname());
-                            }
-                            if (userDTO.avatar() != null) {
-                                draft.setAvatar(userDTO.avatar());
-                            }
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
-        } catch (Exception e) {
-            log.error("更新用户信息失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
+        if (!userId.equals(userDTO.id())) {
+            throw new BusinessException("无权修改其他用户信息");
         }
-    }
-
-    @PutMapping("/avatar")
-    public User updateAvatar(@RequestBody String avatarUrl) {
-        String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户头像，用户ID: {}, 头像URL: {}", userId, avatarUrl);
-        try {
-            return userRepository.findById(userId)
-                    .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            draft.setAvatar(avatarUrl);
-                        });
-                    })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
-        } catch (Exception e) {
-            log.error("更新用户头像失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
-        }
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+        userRepository.update(UserDraft.$.produce(draft -> {
+            draft.setId(userId)
+                    .setNickname(userDTO.nickname())
+                    .setAvatar(userDTO.avatar())
+                    .setPhone(existingUser.phone())
+                    .setPassword(existingUser.password());
+        }));
     }
 
     @GetMapping("/info")
@@ -112,28 +81,22 @@ public class UserController {
     @PutMapping("/password")
     public void updatePassword(@RequestBody PasswordUpdateDTO passwordUpdateDTO) {
         String userId = StpUtil.getLoginIdAsString();
-        log.info("开始修改密码，用户ID: {}", userId);
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BusinessException("用户不存在"));
-            
-            if (!BCrypt.checkpw(passwordUpdateDTO.getOldPassword(), user.password())) {
-                log.warn("用户 {} 输入的原密码不正确", userId);
-                throw new BusinessException("原密码不正确");
-            }
-
-            userRepository.update(UserDraft.$.produce(draft -> {
-                draft.setId(userId)
-                        .setPassword(BCrypt.hashpw(passwordUpdateDTO.getNewPassword()))
-                        .setPhone(user.phone())
-                        .setNickname(user.nickname())
-                        .setAvatar(user.avatar());
-            }));
-            log.info("密码修改成功，用户ID: {}", userId);
-        } catch (Exception e) {
-            log.error("修改密码失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
-            throw e;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+        
+        // 验证旧密码是否正确
+        if (!BCrypt.checkpw(passwordUpdateDTO.getOldPassword(), user.password())) {
+            throw new BusinessException("原密码不正确");
         }
+
+        // 更新密码
+        userRepository.update(UserDraft.$.produce(draft -> {
+            draft.setId(userId)
+                    .setPassword(BCrypt.hashpw(passwordUpdateDTO.getNewPassword()))
+                    .setPhone(user.phone())
+                    .setNickname(user.nickname())
+                    .setAvatar(user.avatar());
+        }));
     }
 
     @DeleteMapping

@@ -88,12 +88,16 @@ public class UserController {
         String userId = StpUtil.getLoginIdAsString();
         log.info("开始更新用户头像，用户ID: {}, 头像URL: {}", userId, avatarUrl);
         try {
-            return userRepository.findById(userId)
+            return userRepository.findById(userId, UserRepository.FETCHER)
                     .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
+                        return userRepository.update(UserDraft.$.produce(draft -> {
                             draft.setId(userId);
                             draft.setAvatar(avatarUrl);
-                        });
+                            draft.setPhone(existingUser.phone());
+                            draft.setNickname(existingUser.nickname());
+                            draft.setPassword(existingUser.password());
+                            draft.setGender(existingUser.gender());
+                        }));
                     })
                     .orElseThrow(() -> new RuntimeException("用户不存在"));
         } catch (Exception e) {

@@ -160,8 +160,7 @@ const deleteAccount = async () => {
           :headers="uploadHeaders"
           name="file"
         >
-          <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          <el-avatar :size="100" :src="avatarUrl || userInfo?.avatar" @error="() => true" />
         </el-upload>
         <div class="upload-tip">点击上传头像</div>
       </div>
