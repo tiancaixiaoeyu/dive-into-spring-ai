@@ -69,7 +69,7 @@ public class AiMessageController{
         });
         aiMessageRepository.save(message);
     }
-    // 哥你是在上班摸鱼吗 怎么一阵一阵的 你在干嘛呀你在干嘛呀救救孩子啊 你不会去拉屎了吧 阿门。    今天周末
+
     /**
      * 为了支持文件问答，需要同时接收json（AiMessageWrapper json体）和 MultipartFile（文件）
      * Content-Type 从 application/json 修改为 multipart/form-data

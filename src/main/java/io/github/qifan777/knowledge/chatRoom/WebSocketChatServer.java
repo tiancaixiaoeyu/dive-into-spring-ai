@@ -27,11 +27,13 @@ public class WebSocketChatServer {
     public void onOpen(Session session, @PathParam("roomId") String roomId) {
         try {
             String userId = session.getRequestParameterMap().get("userId").get(0);
+            String nickname = session.getRequestParameterMap().get("nickname").get(0);
+            
             if (userId == null) {
                 log.error("用户ID为空，无法连接到房间 {}", roomId);
-                return; // 退出方法
+                return;
             }
-            log.info("用户 {} 正在连接到房间 {}", userId, roomId);
+            log.info("用户 {} ({}) 正在连接到房间 {}", nickname, userId, roomId);
             
             roomSessions.putIfAbsent(roomId, new ConcurrentHashMap<>());
             roomSessions.get(roomId).put(userId, session);
@@ -39,14 +41,14 @@ public class WebSocketChatServer {
             ChatMessage joinMessage = new ChatMessage(
                 UUID.randomUUID().toString(),
                 userId,
-                userId,
+                nickname,
                 "加入了聊天室",
                 LocalDateTime.now().toString(),
-                ChatMessage.MessageType.JOIN
+                ChatMessage.MessageType.JOIN,
+                    nickname
             );
             broadcastToRoom(roomId, joinMessage);
-              // 广播在线人数
-        broadcastOnlineCount(roomId);
+            broadcastOnlineCount(roomId);
         } catch (Exception e) {
             log.error("WebSocket连接错误", e);
         }
@@ -55,13 +57,17 @@ public class WebSocketChatServer {
     @OnMessage
     public void onMessage(String message, Session session, @PathParam("roomId") String roomId) {
         String userId = session.getRequestParameterMap().get("userId").get(0);
+        String nickname = session.getRequestParameterMap().get("nickname").get(0);
         ChatMessage chatMessage = new ChatMessage(
                 UUID.randomUUID().toString(),
                 userId,
                 userId,
                 message,
                 LocalDateTime.now().toString(),
-                ChatMessage.MessageType.CHAT
+                ChatMessage.MessageType.CHAT,
+                nickname
+
+
         );
         broadcastToRoom(roomId, chatMessage);
     }
@@ -69,6 +75,7 @@ public class WebSocketChatServer {
     @OnClose
     public void onClose(Session session, @PathParam("roomId") String roomId) {
         String userId = session.getRequestParameterMap().get("userId").get(0);
+        String nickname = session.getRequestParameterMap().get("nickname").get(0);
         if (roomSessions.containsKey(roomId)) {
             roomSessions.get(roomId).remove(userId);
             broadcastToRoom(roomId, new ChatMessage(
@@ -77,7 +84,8 @@ public class WebSocketChatServer {
                     userId,
                     "离开了聊天室",
                     LocalDateTime.now().toString(),
-                    ChatMessage.MessageType.LEAVE
+                    ChatMessage.MessageType.LEAVE,
+                    nickname
             ));
             // 广播在线人数
             broadcastOnlineCount(roomId);
@@ -95,7 +103,8 @@ public class WebSocketChatServer {
                 "system",
                 String.valueOf(onlineCount),
                 LocalDateTime.now().toString(),
-                ChatMessage.MessageType.ONLINE_COUNT
+                ChatMessage.MessageType.ONLINE_COUNT,
+                    "system"
             );
             
             broadcastToRoom(roomId, countMessage);

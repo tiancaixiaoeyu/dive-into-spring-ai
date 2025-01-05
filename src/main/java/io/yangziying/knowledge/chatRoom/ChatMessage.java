@@ -14,6 +14,7 @@ public class ChatMessage {
     private String content;
     private String timestamp;
     private MessageType type;
+    private String nickname;
     
     public enum MessageType {
         CHAT,    // 聊天消息

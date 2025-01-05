@@ -19,11 +19,15 @@ const navigateTo = (path: string) => {
 }
 
 // 监听在线用户数变化
-watch(() => activeRoom.value?.users, (newUsers) => {
-  if (newUsers) {
-    onlineCount.value = newUsers.length
-  }
-}, { deep: true })
+watch(
+  () => activeRoom.value?.users,
+  (newUsers) => {
+    if (newUsers) {
+      onlineCount.value = newUsers.length
+    }
+  },
+  { deep: true }
+)
 
 // 解析 JSON 字符串并提取 content 字段
 const getMessageContent = (content: string): string => {
@@ -46,11 +50,12 @@ const sendMessage = () => {
   console.log(messageText)
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!userId) {
     ElMessage.error('请先登录')
     return
   }
+
   chatRoomStore.initWebSocket('public-room', userId)
   console.log('WebSocket initialized with userId:', userId)
 })
@@ -62,11 +67,24 @@ onUnmounted(() => {
 
 <template>
   <div class="chatroom-view">
-    <div class="nav-bar">
+    <!-- <div class="nav-bar">
       <el-menu mode="horizontal" style="width: 100%">
         <el-menu-item index="ai-assistant" @click="navigateTo('/')">AI 助手</el-menu-item>
         <el-menu-item index="chatroom" @click="navigateTo('/chatroom')">公共聊天室</el-menu-item>
         <el-menu-item index="profile" @click="navigateTo('/profile')">个人中心</el-menu-item>
+      </el-menu>
+    </div> -->
+    <div class="nav-bar">
+      <el-menu mode="horizontal" :router="true" class="custom-menu">
+        <el-menu-item index="/">
+          <el-icon><ChatLineRound /></el-icon>AI 助手
+        </el-menu-item>
+        <el-menu-item index="/chatroom">
+          <el-icon><Service /></el-icon>公共聊天室
+        </el-menu-item>
+        <el-menu-item index="/profile">
+          <el-icon><User /></el-icon>个人中心
+        </el-menu-item>
       </el-menu>
     </div>
     <div class="chat-panel">
@@ -78,7 +96,8 @@ onUnmounted(() => {
       <div class="message-list" ref="messageListRef">
         <div v-for="message in activeRoom?.messages" :key="message.id" class="message-item">
           <div class="message-info">
-            <div class="message-list">
+            <div class="sender-name">{{ message.userId || '未知用户' }}</div>
+            <div class="message-content">
               {{ getMessageContent(message.content) }}
               <div class="message-time">{{ message.timestamp }}</div>
             </div>
@@ -179,6 +198,21 @@ onUnmounted(() => {
         width: 100%;
       }
     }
+  }
+}
+
+.message-info {
+  .sender-name {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .message-content {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
   }
 }
 </style>

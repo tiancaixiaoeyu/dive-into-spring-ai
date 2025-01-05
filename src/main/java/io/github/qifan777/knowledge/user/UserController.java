@@ -56,27 +56,27 @@ public class UserController {
         return StpUtil.getTokenInfo();
     }
 
-    @PutMapping("/update")
-    public User updateUser(@RequestBody User userDTO) {
+    @PutMapping
+    public User updateUser(@RequestBody User user) {
         String userId = StpUtil.getLoginIdAsString();
-        log.info("开始更新用户信息，用户ID: {}, 更新数据: {}", userId, userDTO);
+        log.info("开始更新用户信息，用户ID: {}", userId);
         try {
-            return userRepository.findById(userId)
+            return userRepository.findById(userId, UserRepository.FETCHER)
                     .map(existingUser -> {
-                        return UserDraft.$.produce(draft -> {
-                            draft.setId(userId);
-                            if (userDTO.phone() != null) {
-                                draft.setPhone(userDTO.phone());
+                        return UserDraft.$.produce(existingUser, draft -> {
+                            if (user.avatar() != null) {
+                                draft.setAvatar(user.avatar());
                             }
-                            if (userDTO.nickname() != null) {
-                                draft.setNickname(userDTO.nickname());
+                            if (user.nickname() != null) {
+                                draft.setNickname(user.nickname());
                             }
-                            if (userDTO.avatar() != null) {
-                                draft.setAvatar(userDTO.avatar());
+                            if (user.gender() != null) {
+                                draft.setGender(user.gender());
                             }
+                            // 不允许更新 phone 和 password
                         });
                     })
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+                    .orElseThrow(() -> new BusinessException("用户不存在"));
         } catch (Exception e) {
             log.error("更新用户信息失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
             throw e;

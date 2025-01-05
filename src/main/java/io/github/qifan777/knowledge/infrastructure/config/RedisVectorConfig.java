@@ -1,9 +1,7 @@
 package io.github.qifan777.knowledge.infrastructure.config;
 
-import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
-
-import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.autoconfigure.vectorstore.redis.RedisVectorStoreAutoConfiguration;
 import org.springframework.ai.autoconfigure.vectorstore.redis.RedisVectorStoreProperties;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -15,8 +13,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisPooled;
-import lombok.extern.slf4j.Slf4j;  // 添加日志注解
-import org.springframework.context.annotation.Lazy;
 @Slf4j  // 添加这个注解
 
 @Configuration
@@ -36,6 +32,7 @@ public class RedisVectorConfig {
      * @return vectorStore 向量数据库
      */
     @Bean
+    @SuppressWarnings("unchecked")
     public VectorStore vectorStore(EmbeddingModel embeddingModel,
                                    RedisVectorStoreProperties properties,
                                    RedisConnectionDetails redisConnectionDetails) {
