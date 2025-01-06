@@ -37,7 +37,7 @@ const getMessageContent = (content: string): string => {
     const parsed = JSON.parse(content)
     return parsed.content || '内容字段不存在'
   } catch (error) {
-    // console.error('JSON 解析错误:', error)
+    console.error('JSON 解析错误:', error)
     return content
   }
 }
@@ -128,16 +128,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-      </div>
-      <div class="input-area">
-        <el-input
-          v-model="messageText"
-          type="textarea"
-          :rows="3"
-          placeholder="输入消息..."
-          @keyup.enter="sendMessage"
-        />
-        <el-button type="primary" @click="sendMessage">发送</el-button>
       </div>
     </div>
   </div>
@@ -241,7 +231,7 @@ onUnmounted(() => {
 }
 
 .room-selector {
-  max-width: 1600px;
+  max-width: 400px;
   margin: 50px auto;
   padding: 20px;
   border-radius: 8px;

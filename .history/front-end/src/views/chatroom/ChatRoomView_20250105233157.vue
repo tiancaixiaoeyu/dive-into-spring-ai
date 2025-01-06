@@ -11,7 +11,7 @@ const messageInput = ref<HTMLTextAreaElement>()
 const messageText = ref('')
 const userId = localStorage.getItem('userId')
 const userInfo = ref<UserDTO>()
-const nickname = ref('')
+  const nickname = ref('')
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -37,38 +37,21 @@ const getMessageContent = (content: string): string => {
     const parsed = JSON.parse(content)
     return parsed.content || '内容字段不存在'
   } catch (error) {
-    // console.error('JSON 解析错误:', error)
+    console.error('JSON 解析错误:', error)
     return content
   }
 }
-const sendMessage = () => {
+const sendMessage = async () => {
+  const res = await api.userController.userInfo()
+  nickname.value = res.nickname
   if (!messageText.value.trim()) return
   if (!userId) {
     ElMessage.error('请先登录')
     return
   }
-  chatRoomStore.sendMessage(messageText.value, userId)
+  chatRoomStore.sendMessage(messageText.value, userId, nickname)
   messageText.value = ''
   console.log(messageText)
-}
-
-const roomIdInput = ref('')
-
-const joinRoom = () => {
-  if (!roomIdInput.value.trim()) {
-    ElMessage.error('请输入房间ID')
-    return
-  }
-  if (!userId) {
-    ElMessage.error('请先登录')
-    return
-  }
-  chatRoomStore.initWebSocket(roomIdInput.value, userId, nickname.value)
-}
-
-const leaveRoom = () => {
-  chatRoomStore.closeConnection()
-  roomIdInput.value = ''
 }
 
 onMounted(async () => {
@@ -76,6 +59,9 @@ onMounted(async () => {
     ElMessage.error('请先登录')
     return
   }
+
+  chatRoomStore.initWebSocket('public-room', userId)
+  console.log('WebSocket initialized with userId:', userId)
 })
 
 onUnmounted(() => {
@@ -85,6 +71,13 @@ onUnmounted(() => {
 
 <template>
   <div class="chatroom-view">
+    <!-- <div class="nav-bar">
+      <el-menu mode="horizontal" style="width: 100%">
+        <el-menu-item index="ai-assistant" @click="navigateTo('/')">AI 助手</el-menu-item>
+        <el-menu-item index="chatroom" @click="navigateTo('/chatroom')">公共聊天室</el-menu-item>
+        <el-menu-item index="profile" @click="navigateTo('/profile')">个人中心</el-menu-item>
+      </el-menu>
+    </div> -->
     <div class="nav-bar">
       <el-menu mode="horizontal" :router="true" class="custom-menu">
         <el-menu-item index="/">
@@ -98,26 +91,12 @@ onUnmounted(() => {
         </el-menu-item>
       </el-menu>
     </div>
-
-    <!-- 添加房间选择/输入表单 -->
-    <div class="room-selector" v-if="!activeRoom">
-      <el-form @submit.prevent="joinRoom">
-        <el-form-item label="房间ID">
-          <el-input v-model="roomIdInput" placeholder="请输入房间ID"></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="joinRoom">加入房间</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 聊天室主界面 -->
-    <div class="chat-panel" v-else>
+    <div class="chat-panel">
       <div class="room-info">
-        <h2>房间: {{ activeRoom.id }}</h2>
+        <h2>公共聊天室</h2>
         <span class="online-count">在线人数: {{ onlineCount }}</span>
-        <el-button @click="leaveRoom" size="small">离开房间</el-button>
       </div>
+
       <div class="message-list" ref="messageListRef">
         <div v-for="message in activeRoom?.messages" :key="message.id" class="message-item">
           <div class="message-info">
@@ -129,6 +108,7 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+
       <div class="input-area">
         <el-input
           v-model="messageText"
@@ -238,13 +218,5 @@ onUnmounted(() => {
     border-radius: 4px;
     display: inline-block;
   }
-}
-
-.room-selector {
-  max-width: 1600px;
-  margin: 50px auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 </style>

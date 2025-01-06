@@ -58,7 +58,7 @@ const handleAvatarSuccess = async (response: any) => {
     const updateData = {
       id: userInfo.value?.id,
       phone: userInfo.value?.phone,
-      nickname: nickname.value,
+      nickname: userInfo.value?.nickname,
       avatar: response.url,
       gender: userInfo.value?.gender
     }
@@ -92,8 +92,8 @@ const updateNickname = async () => {
       id: userInfo.value.id,
       nickname: nickname.value,
       phone: userInfo.value.phone,
-      avatar: avatarUrl.value || userInfo.value?.avatar,
-      gender: userInfo.value?.gender || null
+      avatar: userInfo.value.avatar,
+      gender: userInfo.value.gender
     }
 
     console.log('发送的更新数据:', updateData)
@@ -106,15 +106,9 @@ const updateNickname = async () => {
     const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
-    avatarUrl.value = res.avatar || ''
     ElMessage.success('昵称更新成功')
   } catch (error: any) {
-    console.error('更新失败:', {
-      error,
-      response: error.response,
-      data: error.response?.data,
-      message: error.response?.data?.message
-    })
+    console.error('更新失败:', error)
     ElMessage.error(error.response?.data?.message || '昵称更新失败')
   }
 }
@@ -152,8 +146,7 @@ const deleteAccount = async () => {
     router.push('/login')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.warning('账号注销成功')
-      router.push('/login')
+      ElMessage.('账号注销失败')
     }
   }
 }

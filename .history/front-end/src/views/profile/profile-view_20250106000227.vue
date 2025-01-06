@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/utils/api-instance'
 import { useRouter } from 'vue-router'
@@ -58,7 +58,7 @@ const handleAvatarSuccess = async (response: any) => {
     const updateData = {
       id: userInfo.value?.id,
       phone: userInfo.value?.phone,
-      nickname: nickname.value,
+      nickname: userInfo.value?.nickname,
       avatar: response.url,
       gender: userInfo.value?.gender
     }
@@ -92,8 +92,8 @@ const updateNickname = async () => {
       id: userInfo.value.id,
       nickname: nickname.value,
       phone: userInfo.value.phone,
-      avatar: avatarUrl.value || userInfo.value?.avatar,
-      gender: userInfo.value?.gender || null
+      avatar: userInfo.value.avatar,
+      gender: userInfo.value.gender
     }
 
     console.log('发送的更新数据:', updateData)
@@ -106,15 +106,9 @@ const updateNickname = async () => {
     const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
-    avatarUrl.value = res.avatar || ''
     ElMessage.success('昵称更新成功')
   } catch (error: any) {
-    console.error('更新失败:', {
-      error,
-      response: error.response,
-      data: error.response?.data,
-      message: error.response?.data?.message
-    })
+    console.error('更新失败:', error)
     ElMessage.error(error.response?.data?.message || '昵称更新失败')
   }
 }
@@ -141,19 +135,53 @@ const updatePassword = async () => {
 
 const deleteAccount = async () => {
   try {
+    // 添加二次确认
     await ElMessageBox.confirm('此操作将永久删除您的账号，是否继续？', '警告', {
-      confirmButtonText: '确定',
+      confirmButtonText: '确定注销',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
+      customClass: 'delete-confirm-dialog',
+      confirmButtonClass: 'delete-confirm-button'
     })
-    await api.userController.deleteAccount()
-    ElMessage.success('账号已注销')
-    localStorage.removeItem('token')
-    router.push('/login')
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.warning('账号注销成功')
+
+    console.log('开始注销账号...')
+    
+    // 确保有token
+    const token = localStorage.getItem('token')
+    if (!token) {
+      ElMessage.error('请先登录')
       router.push('/login')
+      return
+    }
+
+    // 调用注销接口
+    await api.userController.deleteAccount()
+    
+    console.log('注销成功，清除本地存储...')
+    
+    // 先显示成功消息
+    ElMessage.success('账号已注销')
+    
+    // 清除本地存储
+    localStorage.clear() // 清除所有本地存储
+    
+    // 使用 nextTick 确保消息显示后再跳转
+    nextTick(() => {
+      // 延迟跳转，让用户能看到成功消息
+      setTimeout(() => {
+        router.push('/login')
+      }, 1500)
+    })
+  } catch (error: any) {
+    // 如果是用户取消操作，直接返回
+    if (error === 'cancel') {
+      return
+    }
+    
+    // 只有在真正出错时才显示错误信息
+    if (error.response) {
+      console.error('账号注销失败:', error.response?.data?.message)
+      ElMessage.error(error.response?.data?.message || '账号注销失败，请稍后重试')
     }
   }
 }

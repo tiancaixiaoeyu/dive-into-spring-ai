@@ -21,7 +21,7 @@ import type { UserLoginInput } from '@/apis/__generated/model/static'
 const loginForm = reactive<UserLoginInput>({ phone: '', password: '' })
 const ruleFormRef = ref<FormInstance>()
 const rules = reactive<FormRules<typeof loginForm>>({
-  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { len: 11, message: '手机号必须是十一位' }],
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { max: 16, min: 6, message: '密码长度介于6，16' }

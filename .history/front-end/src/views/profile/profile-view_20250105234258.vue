@@ -9,7 +9,6 @@ import { Plus, ChatLineRound, Service, User, UserFilled, Camera } from '@element
 const router = useRouter()
 const userInfo = ref<UserDTO>()
 const avatarUrl = ref('')
-const username = ref('')
 const nickname = ref('')
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -41,12 +40,9 @@ onMounted(async () => {
   try {
     const res = await api.userController.userInfo()
     userInfo.value = res
-    username.value = res.username || ''
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''
-    console.log('获取到的用户信息:', res)
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
   }
 })
@@ -58,7 +54,7 @@ const handleAvatarSuccess = async (response: any) => {
     const updateData = {
       id: userInfo.value?.id,
       phone: userInfo.value?.phone,
-      nickname: nickname.value,
+      nickname: userInfo.value?.nickname,
       avatar: response.url,
       gender: userInfo.value?.gender
     }
@@ -86,17 +82,13 @@ const updateNickname = async () => {
       return
     }
 
-    console.log('准备更新昵称:', nickname.value)
-
     const updateData = {
       id: userInfo.value.id,
       nickname: nickname.value,
       phone: userInfo.value.phone,
-      avatar: avatarUrl.value || userInfo.value?.avatar,
-      gender: userInfo.value?.gender || null
+      avatar: userInfo.value.avatar || null,
+      gender: userInfo.value.gender || null
     }
-
-    console.log('发送的更新数据:', updateData)
 
     await api.userController.updateUser({
       body: updateData
@@ -106,15 +98,9 @@ const updateNickname = async () => {
     const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
-    avatarUrl.value = res.avatar || ''
     ElMessage.success('昵称更新成功')
   } catch (error: any) {
-    console.error('更新失败:', {
-      error,
-      response: error.response,
-      data: error.response?.data,
-      message: error.response?.data?.message
-    })
+    console.error('更新失败:', error)
     ElMessage.error(error.response?.data?.message || '昵称更新失败')
   }
 }
@@ -152,8 +138,7 @@ const deleteAccount = async () => {
     router.push('/login')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.warning('账号注销成功')
-      router.push('/login')
+      ElMessage.error('账号注销失败')
     }
   }
 }
@@ -207,7 +192,7 @@ const handleLogout = () => {
               </div>
             </div>
           </el-upload>
-          <h2 class="username">{{ nickname || '未设置昵称' }}</h2>
+          <h2 class="username">{{ userInfo?.nickname }}</h2>
           <p class="user-info">{{ userInfo?.phone }}</p>
           <el-button type="danger" @click="handleLogout" class="logout-btn">退出登录</el-button>
         </div>

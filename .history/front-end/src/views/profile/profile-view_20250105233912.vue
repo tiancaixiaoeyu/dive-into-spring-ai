@@ -44,9 +44,7 @@ onMounted(async () => {
     username.value = res.username || ''
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''
-    console.log('获取到的用户信息:', res)
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
   }
 })
@@ -58,7 +56,7 @@ const handleAvatarSuccess = async (response: any) => {
     const updateData = {
       id: userInfo.value?.id,
       phone: userInfo.value?.phone,
-      nickname: nickname.value,
+      nickname: userInfo.value?.nickname,
       avatar: response.url,
       gender: userInfo.value?.gender
     }
@@ -86,30 +84,25 @@ const updateNickname = async () => {
       return
     }
 
-    console.log('准备更新昵称:', nickname.value)
-
     const updateData = {
       id: userInfo.value.id,
       nickname: nickname.value,
       phone: userInfo.value.phone,
-      avatar: avatarUrl.value || userInfo.value?.avatar,
-      gender: userInfo.value?.gender || null
+      avatar: userInfo.value.avatar || null,
+      gender: userInfo.value.gender || null
     }
 
-    console.log('发送的更新数据:', updateData)
+    console.log('准备更新的数据:', updateData)
 
     await api.userController.updateUser({
       body: updateData
     })
 
-    // 重新获取用户信息
     const res = await api.userController.userInfo()
     userInfo.value = res
-    nickname.value = res.nickname || ''
-    avatarUrl.value = res.avatar || ''
     ElMessage.success('昵称更新成功')
   } catch (error: any) {
-    console.error('更新失败:', {
+    console.error('更新失败详细信息:', {
       error,
       response: error.response,
       data: error.response?.data,
@@ -152,8 +145,7 @@ const deleteAccount = async () => {
     router.push('/login')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.warning('账号注销成功')
-      router.push('/login')
+      ElMessage.error('账号注销失败')
     }
   }
 }
@@ -207,7 +199,7 @@ const handleLogout = () => {
               </div>
             </div>
           </el-upload>
-          <h2 class="username">{{ nickname || '未设置昵称' }}</h2>
+          <h2 class="username">{{ userInfo?.nickname }}</h2>
           <p class="user-info">{{ userInfo?.phone }}</p>
           <el-button type="danger" @click="handleLogout" class="logout-btn">退出登录</el-button>
         </div>
@@ -229,7 +221,7 @@ const handleLogout = () => {
                 </el-form>
               </el-tab-pane>
 
-              <el-tab-pane label="账户设置" name="security">
+              <el-tab-pane label="账户安全设置" name="security">
                 <el-form label-width="100px" class="profile-form">
                   <el-form-item label="原密码">
                     <el-input v-model="oldPassword" type="password" placeholder="请输入原密码" />

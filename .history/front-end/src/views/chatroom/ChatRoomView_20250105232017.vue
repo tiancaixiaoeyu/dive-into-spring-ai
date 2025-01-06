@@ -3,15 +3,13 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useChatRoomStore } from './store/chatroom-store'
 import { storeToRefs } from 'pinia'
 import MessageRow from '../chat/components/message-row.vue'
-import type { UserDTO } from '@/apis/__generated/model/user'
+
 import { ElMessage } from 'element-plus'
 const chatRoomStore = useChatRoomStore()
 const { activeRoom, onlineCount } = storeToRefs(chatRoomStore)
 const messageInput = ref<HTMLTextAreaElement>()
 const messageText = ref('')
 const userId = localStorage.getItem('userId')
-const userInfo = ref<UserDTO>()
-const nickname = ref('')
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -37,7 +35,7 @@ const getMessageContent = (content: string): string => {
     const parsed = JSON.parse(content)
     return parsed.content || '内容字段不存在'
   } catch (error) {
-    // console.error('JSON 解析错误:', error)
+    console.error('JSON 解析错误:', error)
     return content
   }
 }
@@ -52,30 +50,14 @@ const sendMessage = () => {
   console.log(messageText)
 }
 
-const roomIdInput = ref('')
-
-const joinRoom = () => {
-  if (!roomIdInput.value.trim()) {
-    ElMessage.error('请输入房间ID')
-    return
-  }
-  if (!userId) {
-    ElMessage.error('请先登录')
-    return
-  }
-  chatRoomStore.initWebSocket(roomIdInput.value, userId, nickname.value)
-}
-
-const leaveRoom = () => {
-  chatRoomStore.closeConnection()
-  roomIdInput.value = ''
-}
-
 onMounted(async () => {
   if (!userId) {
     ElMessage.error('请先登录')
     return
   }
+
+  chatRoomStore.initWebSocket('public-room', userId)
+  console.log('WebSocket initialized with userId:', userId)
 })
 
 onUnmounted(() => {
@@ -98,26 +80,12 @@ onUnmounted(() => {
         </el-menu-item>
       </el-menu>
     </div>
-
-    <!-- 添加房间选择/输入表单 -->
-    <div class="room-selector" v-if="!activeRoom">
-      <el-form @submit.prevent="joinRoom">
-        <el-form-item label="房间ID">
-          <el-input v-model="roomIdInput" placeholder="请输入房间ID"></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="joinRoom">加入房间</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 聊天室主界面 -->
-    <div class="chat-panel" v-else>
+    <div class="chat-panel">
       <div class="room-info">
-        <h2>房间: {{ activeRoom.id }}</h2>
+        <h2>公共聊天室</h2>
         <span class="online-count">在线人数: {{ onlineCount }}</span>
-        <el-button @click="leaveRoom" size="small">离开房间</el-button>
       </div>
+
       <div class="message-list" ref="messageListRef">
         <div v-for="message in activeRoom?.messages" :key="message.id" class="message-item">
           <div class="message-info">
@@ -129,6 +97,7 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+
       <div class="input-area">
         <el-input
           v-model="messageText"
@@ -137,7 +106,7 @@ onUnmounted(() => {
           placeholder="输入消息..."
           @keyup.enter="sendMessage"
         />
-        <el-button type="primary" @click="sendMessage">发送</el-button>
+        <el-button type="primary" size="large" @click="sendMessage">发送</el-button>
       </div>
     </div>
   </div>
@@ -151,13 +120,30 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-top: 60px; // 为导航栏留出空间
+
   .nav-bar {
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1000;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    .custom-menu {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      
+      :deep(.el-menu-item) {
+        font-size: 16px;
+        height: 60px;
+        line-height: 60px;
+        
+        .el-icon {
+          font-size: 20px;
+          margin-right: 8px;
+        }
+      }
+    }
   }
 
   .chat-panel {
@@ -166,32 +152,42 @@ onUnmounted(() => {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
 
     .room-info {
-      padding: 20px;
+      padding: 24px 32px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
       display: flex;
       justify-content: space-between;
       align-items: center;
 
+      h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+      }
+
       .online-count {
+        font-size: 16px;
         color: #666;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 8px 16px;
+        border-radius: 20px;
       }
     }
 
     .message-list {
-      padding: 15px;
+      padding: 24px;
       width: 100%;
       flex: 1;
       box-sizing: border-box;
-      // 消息条数太多时，溢出部分滚动
-      overflow-y: scroll;
+      overflow-y: auto;
 
-      //... 保持其他属性不变 ...
       &::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
       }
 
       &::-webkit-scrollbar-thumb {
@@ -199,6 +195,7 @@ onUnmounted(() => {
         border-radius: 3px;
       }
     }
+
     .message-item {
       padding: 10px;
       margin: 5px 0;
@@ -238,13 +235,5 @@ onUnmounted(() => {
     border-radius: 4px;
     display: inline-block;
   }
-}
-
-.room-selector {
-  max-width: 1600px;
-  margin: 50px auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 </style>

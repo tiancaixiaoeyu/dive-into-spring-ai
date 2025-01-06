@@ -242,7 +242,7 @@ onUnmounted(() => {
 
 .room-selector {
   max-width: 1600px;
-  margin: 50px auto;
+  margin: 150px auto;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);

@@ -37,7 +37,7 @@ const getMessageContent = (content: string): string => {
     const parsed = JSON.parse(content)
     return parsed.content || '内容字段不存在'
   } catch (error) {
-    // console.error('JSON 解析错误:', error)
+    console.error('JSON 解析错误:', error)
     return content
   }
 }
@@ -241,7 +241,7 @@ onUnmounted(() => {
 }
 
 .room-selector {
-  max-width: 1600px;
+  max-width: 400px;
   margin: 50px auto;
   padding: 20px;
   border-radius: 8px;

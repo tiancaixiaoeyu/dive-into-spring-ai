@@ -11,7 +11,7 @@ const messageInput = ref<HTMLTextAreaElement>()
 const messageText = ref('')
 const userId = localStorage.getItem('userId')
 const userInfo = ref<UserDTO>()
-const nickname = ref('')
+  const nickname = ref('')
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -37,11 +37,12 @@ const getMessageContent = (content: string): string => {
     const parsed = JSON.parse(content)
     return parsed.content || '内容字段不存在'
   } catch (error) {
-    // console.error('JSON 解析错误:', error)
+    console.error('JSON 解析错误:', error)
     return content
   }
 }
 const sendMessage = () => {
+  
   if (!messageText.value.trim()) return
   if (!userId) {
     ElMessage.error('请先登录')
@@ -118,27 +119,7 @@ onUnmounted(() => {
         <span class="online-count">在线人数: {{ onlineCount }}</span>
         <el-button @click="leaveRoom" size="small">离开房间</el-button>
       </div>
-      <div class="message-list" ref="messageListRef">
-        <div v-for="message in activeRoom?.messages" :key="message.id" class="message-item">
-          <div class="message-info">
-            <div class="sender-name">{{ message.userId || '未知用户' }}</div>
-            <div class="message-content">
-              {{ getMessageContent(message.content) }}
-              <div class="message-time">{{ message.timestamp }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="input-area">
-        <el-input
-          v-model="messageText"
-          type="textarea"
-          :rows="3"
-          placeholder="输入消息..."
-          @keyup.enter="sendMessage"
-        />
-        <el-button type="primary" @click="sendMessage">发送</el-button>
-      </div>
+      <!-- 其他已有的聊天室内容 -->
     </div>
   </div>
 </template>
@@ -241,10 +222,10 @@ onUnmounted(() => {
 }
 
 .room-selector {
-  max-width: 1600px;
+  max-width: 400px;
   margin: 50px auto;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
 </style>
