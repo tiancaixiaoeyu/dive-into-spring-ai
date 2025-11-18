@@ -98,7 +98,7 @@ const updateNickname = async () => {
 
     console.log('发送的更新数据:', updateData)
 
-    const res = await api.userController.updateUser({
+    await api.userController.updateUser({
       body: updateData
     })
 

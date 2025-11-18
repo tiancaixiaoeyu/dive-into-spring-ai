@@ -10,7 +10,7 @@ spring:
      port: 6379
      password: 123456
      database: 0
-     timeout: 10s
+     timeout: 15s
      repositories:
         enabled: false
      lettuce:

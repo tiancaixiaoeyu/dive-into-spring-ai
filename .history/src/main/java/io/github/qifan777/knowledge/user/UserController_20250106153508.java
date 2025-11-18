@@ -67,7 +67,6 @@ public class UserController {
                             draft.setNickname(user.nickname());
                             draft.setAvatar(user.avatar());
                             draft.setGender(user.gender());
-                        });
                         return userRepository.update(updatedUser);
                     })
                     .orElseThrow(() -> new BusinessException("用户不存在"));

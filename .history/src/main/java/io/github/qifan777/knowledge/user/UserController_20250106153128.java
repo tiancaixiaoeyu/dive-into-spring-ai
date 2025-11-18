@@ -64,9 +64,9 @@ public class UserController {
             return userRepository.findById(userId, UserRepository.FETCHER)
                     .map(existingUser -> {
                         User updatedUser = UserDraft.$.produce(existingUser, draft -> {
-                            draft.setNickname(user.nickname());
-                            draft.setAvatar(user.avatar());
-                            draft.setGender(user.gender());
+                            draft.setNickname(user.nickname() != null ? user.nickname() : existingUser.nickname());
+                            //draft.setAvatar(user.avatar() != null ? user.avatar() : existingUser.avatar());
+                            draft.setGender(user.gender() != null ? user.gender() : existingUser.gender());
                         });
                         return userRepository.update(updatedUser);
                     })

@@ -98,12 +98,12 @@ const updateNickname = async () => {
 
     console.log('发送的更新数据:', updateData)
 
-    const res = await api.userController.updateUser({
+    await api.userController.updateUser({
       body: updateData
     })
 
-    // // // 重新获取用户信息
-    // const res = await api.userController.userInfo()
+    // // 重新获取用户信息
+    const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''

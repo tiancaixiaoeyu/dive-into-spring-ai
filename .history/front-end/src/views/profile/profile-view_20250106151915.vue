@@ -69,7 +69,7 @@ const handleAvatarSuccess = async (response: any) => {
     })
 
     // // 重新获取用户信息
-     const res = await api.userController.userInfo()
+    // const res = await api.userController.userInfo()
     userInfo.value = res
     avatarUrl.value = response.url
     ElMessage.success('头像更新成功')
@@ -98,11 +98,11 @@ const updateNickname = async () => {
 
     console.log('发送的更新数据:', updateData)
 
-    const res = await api.userController.updateUser({
+    await api.userController.updateUser({
       body: updateData
     })
 
-    // // // 重新获取用户信息
+    // // 重新获取用户信息
     // const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''

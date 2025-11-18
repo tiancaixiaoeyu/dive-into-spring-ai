@@ -102,8 +102,8 @@ const updateNickname = async () => {
       body: updateData
     })
 
-    // // // 重新获取用户信息
-    // const res = await api.userController.userInfo()
+    // // 重新获取用户信息
+    const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''
