@@ -20,14 +20,14 @@ public class ResponseInterceptor implements ResponseBodyAdvice<Object> {
     private final ObjectMapper objectMapper;
 
     @Override
-    public boolean supports(MethodParameter returnType, Class converterType) {
+    public boolean supports(MethodParameter returnType, Class<?> converterType) {
         return true;
     }
 
     @SneakyThrows
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType,
-                                  MediaType selectedContentType, Class selectedConverterType,
+                                  MediaType selectedContentType, Class<?> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
         if (body instanceof byte[]) {
             return body;

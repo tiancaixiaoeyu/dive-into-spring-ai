@@ -2,23 +2,17 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useChatRoomStore } from './store/chatroom-store'
 import { storeToRefs } from 'pinia'
-import MessageRow from '../chat/components/message-row.vue'
-import type { UserDTO } from '@/apis/__generated/model/user'
 import { ElMessage } from 'element-plus'
-const chatRoomStore = useChatRoomStore()
-const { activeRoom, onlineCount } = storeToRefs(chatRoomStore)
-const messageInput = ref<HTMLTextAreaElement>()
-const messageText = ref('')
-const userId = localStorage.getItem('userId')
-const userInfo = ref<UserDTO>()
-const nickname = ref('')
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
+const chatRoomStore = useChatRoomStore()
+const { activeRoom, onlineCount } = storeToRefs(chatRoomStore)
+const messageText = ref('')
+const messageListRef = ref<HTMLDivElement>()
+const userId = localStorage.getItem('userId')
+const nickname = ref('')
 
-const navigateTo = (path: string) => {
-  router.push(path)
-}
+const router = useRouter()
 
 // 监听在线用户数变化
 watch(
@@ -45,11 +39,11 @@ const sendMessage = () => {
   if (!messageText.value.trim()) return
   if (!userId) {
     ElMessage.error('请先登录')
+    router.push('/login')
     return
   }
   chatRoomStore.sendMessage(messageText.value, userId)
   messageText.value = ''
-  console.log(messageText)
 }
 
 const roomIdInput = ref('')
@@ -61,6 +55,7 @@ const joinRoom = () => {
   }
   if (!userId) {
     ElMessage.error('请先登录')
+    router.push('/login')
     return
   }
   chatRoomStore.initWebSocket(roomIdInput.value, userId, nickname.value)
@@ -74,6 +69,7 @@ const leaveRoom = () => {
 onMounted(async () => {
   if (!userId) {
     ElMessage.error('请先登录')
+    router.push('/login')
     return
   }
 })

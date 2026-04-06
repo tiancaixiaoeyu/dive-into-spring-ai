@@ -34,14 +34,17 @@
 import { ref, watch } from 'vue'
 import { Close, Plus } from '@element-plus/icons-vue'
 import ValueInput from './value-input.vue'
-import type { KeyValue } from '@/apis/__generated/model/static'
 
-const props = defineProps<{ modelValue?: KeyValue[] }>()
+type KeyValueItem = {
+  name: string
+  values: string[]
+}
+
+const props = defineProps<{ modelValue?: KeyValueItem[] }>()
 const emit = defineEmits<{
-  change: [data: KeyValue[]]
-  'update:modelValue': [data: KeyValue[]]
+  'update:modelValue': [data: KeyValueItem[]]
 }>()
-const keyValueList = ref<KeyValue[]>([])
+const keyValueList = ref<KeyValueItem[]>([])
 const deleteKeyValue = (index: number) => {
   keyValueList.value.splice(index, 1)
 }

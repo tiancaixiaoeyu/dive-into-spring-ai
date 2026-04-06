@@ -34,8 +34,9 @@ const handleRegister = async () => {
   await ruleFormRef.value.validate(
     assertFormValidate(() =>
       api.userController.register({ body: registerForm }).then((res) => {
-        router.replace({ path: '/' })
         localStorage.setItem('token', res.tokenValue)
+        localStorage.setItem('userId', res.loginId)
+        router.replace({ path: '/' })
       })
     )
   )

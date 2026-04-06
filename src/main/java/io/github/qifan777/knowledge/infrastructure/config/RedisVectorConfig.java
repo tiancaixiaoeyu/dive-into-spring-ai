@@ -12,13 +12,13 @@ import org.springframework.boot.autoconfigure.data.redis.RedisConnectionDetails;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import io.github.qifan777.knowledge.infrastructure.vector.NoOpVectorStore;
 import redis.clients.jedis.JedisPooled;
-@Slf4j  // 添加这个注解
+
+@Slf4j
 
 @Configuration
-// 禁用SpringAI提供的RedisStack向量数据库的自动配置，会和Redis的配置冲突。
 @EnableAutoConfiguration(exclude = {RedisVectorStoreAutoConfiguration.class})
-// 读取RedisStack的配置信息
 @EnableConfigurationProperties({RedisVectorStoreProperties.class})
 @AllArgsConstructor
 public class RedisVectorConfig {
@@ -32,17 +32,28 @@ public class RedisVectorConfig {
      * @return vectorStore 向量数据库
      */
     @Bean
-    @SuppressWarnings("unchecked")
     public VectorStore vectorStore(EmbeddingModel embeddingModel,
                                    RedisVectorStoreProperties properties,
                                    RedisConnectionDetails redisConnectionDetails) {
-        RedisVectorStore.RedisVectorStoreConfig config = RedisVectorStore.RedisVectorStoreConfig.builder().withIndexName(properties.getIndex()).withPrefix(properties.getPrefix()).build();
-        return new RedisVectorStore(config, embeddingModel,
-                new JedisPooled(redisConnectionDetails.getStandalone().getHost(),
-                        redisConnectionDetails.getStandalone().getPort()
-                        , redisConnectionDetails.getUsername(),
-                        redisConnectionDetails.getPassword()),
-                properties.isInitializeSchema());
+        RedisVectorStore.RedisVectorStoreConfig config = RedisVectorStore.RedisVectorStoreConfig.builder()
+                .withIndexName(properties.getIndex())
+                .withPrefix(properties.getPrefix())
+                .build();
+        try {
+            JedisPooled jedis = new JedisPooled(
+                    redisConnectionDetails.getStandalone().getHost(),
+                    redisConnectionDetails.getStandalone().getPort(),
+                    redisConnectionDetails.getUsername(),
+                    redisConnectionDetails.getPassword()
+            );
+            jedis.ping();
+            RedisVectorStore redisVectorStore = new RedisVectorStore(config, embeddingModel, jedis, properties.isInitializeSchema());
+            redisVectorStore.afterPropertiesSet();
+            return redisVectorStore;
+        } catch (Exception e) {
+            log.warn("Redis 未就绪或未安装 RedisStack 搜索模块，使用 NoOpVectorStore 以避免启动失败", e);
+            return new NoOpVectorStore();
+        }
     }
 }
 

@@ -3,14 +3,12 @@ package io.github.qifan777.knowledge.user;
 import cn.dev33.satoken.secure.BCrypt;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
-import io.github.qifan777.knowledge.user.PasswordUpdateDTO;
 import io.github.qifan777.knowledge.user.dto.UserLoginInput;
 import io.github.qifan777.knowledge.user.dto.UserRegisterInput;
 import io.qifan.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.babyfish.jimmer.client.meta.Api;
 import org.springframework.web.bind.annotation.*;
 
@@ -133,13 +131,9 @@ public class UserController {
     @DeleteMapping
     public void deleteAccount() {
         String userId = StpUtil.getLoginIdAsString();
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException("用户不存在"));
-        
-        // 删除用户
         userRepository.deleteById(userId);
-        
-        // 注销登录
         StpUtil.logout();
     }
 }

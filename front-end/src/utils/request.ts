@@ -7,6 +7,16 @@ export const request = axios.create({
   baseURL: BASE_URL,
   timeout: 600000
 })
+
+request.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.token = token
+    config.headers.Authorization = token
+  }
+  return config
+})
+
 request.interceptors.response.use(
   (res) => {
     if (res.data.code === 1) {
@@ -19,6 +29,8 @@ request.interceptors.response.use(
     if (response?.data) {
       ElMessage.warning({ message: response.data.msg || '请求失败' })
       if (response.data.code === 10012) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('userId')
         router.push('/login')
       }
     } else {

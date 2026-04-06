@@ -12,6 +12,8 @@ export type AiSession = Pick<
   messages: AiMessage[]
 }
 
+type ChatMessageType = 'USER' | 'ASSISTANT' | 'SYSTEM' | 'TOOL'
+
 export type AiMessage = Pick<AiMessageInput, 'textContent' | 'medias' | 'type' | 'sessionId'> & {
   id: string
   sessionId: string
@@ -20,10 +22,31 @@ export type AiMessage = Pick<AiMessageInput, 'textContent' | 'medias' | 'type' |
     data: string
   }>
   textContent: string
-  type: 'USER' | 'ASSISTANT'
-  createdTime?: string  // 添加这行，使用可选属性
-  editedTime?: string   // 添加这行，使用可选属性
+  type: ChatMessageType
+  createdTime?: string
+  editedTime?: string
 }
+
+const normalizeSession = (session: AiSessionDto['AiSessionRepository/FETCHER']): AiSession => {
+  return {
+    id: session.id,
+    name: session.name,
+    editedTime: session.editedTime,
+    messages: session.messages.map((message) => ({
+      id: message.id,
+      sessionId: message.sessionId,
+      medias: (message.medias ?? []).map((media) => ({
+        type: media.type,
+        data: media.data
+      })),
+      textContent: message.textContent,
+      type: message.type as ChatMessageType,
+      createdTime: message.createdTime,
+      editedTime: message.editedTime
+    }))
+  }
+}
+
 export const useChatStore = defineStore('ai-chat', () => {
   const isEdit = ref(false)
   const activeSession = ref<AiSession>()
@@ -31,7 +54,7 @@ export const useChatStore = defineStore('ai-chat', () => {
   const handleCreateSession = async (session: AiSessionInput) => {
     const res = await api.aiSessionController.save({ body: session })
     const sessionRes = await api.aiSessionController.findById({ id: res })
-    sessionList.value.unshift(sessionRes)
+    sessionList.value.unshift(normalizeSession(sessionRes))
     activeSession.value = sessionList.value[0]
   }
   // 从会话列表中删除会话
@@ -63,7 +86,9 @@ export const useChatStore = defineStore('ai-chat', () => {
     const index = sessionList.value.findIndex((value) => {
       return value.id === sessionId
     })
-    activeSession.value = await api.aiSessionController.findById({ id: sessionId })
+    activeSession.value = normalizeSession(
+      await api.aiSessionController.findById({ id: sessionId })
+    )
     sessionList.value[index] = activeSession.value
   }
   return {

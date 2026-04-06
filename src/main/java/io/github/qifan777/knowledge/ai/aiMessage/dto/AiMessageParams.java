@@ -6,4 +6,7 @@ import lombok.Data;
 public class AiMessageParams {
     Boolean enableVectorStore;
     Boolean enableAgent;
+    Boolean enableCitation;
+    String mode;
+    String gradeLevel;
 }

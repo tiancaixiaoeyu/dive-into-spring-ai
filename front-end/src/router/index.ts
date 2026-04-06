@@ -1,8 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import RegisterView from '@/views/login/register-view.vue'
 import LoginView from '@/views/login/login-view.vue'
-import ChatView from '@/views/chat/chat-view.vue'
-import ChatRoomView from '@/views/chatroom/ChatRoomView.vue'
+
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
@@ -19,12 +18,18 @@ const router = createRouter({
     {
       path: '/',
       name: 'chat',
-      component: () => import('@/views/chat/chat-view.vue') // 使用异步导入
+      component: () => import('@/views/chat/chat-view.vue'),
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/chatroom',
       name: 'chatroom',
-      component: () => import('@/views/chatroom/ChatRoomView.vue') // 使用异步导入
+      component: () => import('@/views/chatroom/ChatRoomView.vue'),
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/profile',
@@ -35,6 +40,17 @@ const router = createRouter({
       }
     }
   ]
+})
+
+router.beforeEach((to) => {
+  const token = localStorage.getItem('token')
+  if (to.meta.requiresAuth && !token) {
+    return '/login'
+  }
+  if ((to.path === '/login' || to.path === '/register') && token) {
+    return '/'
+  }
+  return true
 })
 
 export default router

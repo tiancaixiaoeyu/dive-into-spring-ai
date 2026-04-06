@@ -16,6 +16,9 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 <style>
 body {
   margin: 0;
+  min-height: 100vh;
+  color: #d8f4ff;
+  background: #060a18;
   font-family:
     Noto Sans SC,
     SF Pro SC,
@@ -43,7 +46,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, rgba(114, 247, 255, 0.56), rgba(255, 100, 218, 0.4));
   border-radius: 20px;
   background-clip: content-box;
   border: 1px solid transparent;

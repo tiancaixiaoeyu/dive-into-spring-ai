@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.List;
 
 @RequestMapping("demo/document")
@@ -52,42 +51,15 @@ public class DocumentDemoController {
                 .get(0)
                 .getContent();
     }
-//     @PostMapping("etl/reader/local-file")
-//     public  String readFromLocalFile(@RequestParam String path){
-//         Resource resource = (Resource) new FileSystemResource(path);
-//         return  new   TikaDocumentReader(String.valueOf(resource))
-//                 .read()
-//                 .get(0)
-//                 .getContent();
-//     }
-
-    /**
-     * 嵌入文件
-     *
-     * @param file 待嵌入的文件
-     * @return 是否成功
-     */
-//    @SneakyThrows
-//    @PostMapping("embedding")
-//    public Boolean embedding(@RequestParam MultipartFile file) {
-//        // 从IO流中读取文件
-//        TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(new org.springframework.core.io.InputStreamResource(file.getInputStream()));
-//        // 将文本内容划分成更小的块
-//        List<Document> splitDocuments = new TokenTextSplitter()
-//                .apply(tikaDocumentReader.read());
-//        // 存入向量数据库，这个过程会自动调用embeddingModel,将文本变成向量再存入。
-//        vectorStore.add(splitDocuments);
-//        return true;
-//    }
     @SneakyThrows
     @PostMapping("elt/write/vector")
     public void writeVector(@RequestParam MultipartFile file) {
         Resource resource = new InputStreamResource(file.getInputStream());
 
         TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(String.valueOf(resource));
-        List<Document>read =tikaDocumentReader.read();
+        List<Document> read = tikaDocumentReader.read();
         List<Document> split = new TokenTextSplitter().split(read);
-            vectorStore.add(split);
+        vectorStore.add(split);
     }
     /**
      * 查询向量数据库

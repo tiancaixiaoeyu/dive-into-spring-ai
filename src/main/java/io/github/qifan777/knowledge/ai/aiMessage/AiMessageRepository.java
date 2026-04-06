@@ -1,8 +1,6 @@
 package io.github.qifan777.knowledge.ai.aiMessage;
 
 import org.babyfish.jimmer.spring.repository.JRepository;
-import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.springframework.data.domain.Sort;
 
 import java.util.List;
 

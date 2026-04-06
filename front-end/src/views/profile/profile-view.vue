@@ -3,13 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/utils/api-instance'
 import { useRouter } from 'vue-router'
-import type { UserDTO } from '@/apis/__generated/model/user'
-import { Plus, ChatLineRound, Service, User, UserFilled, Camera } from '@element-plus/icons-vue'
+import type { Dynamic_User } from '@/apis/__generated/model/dynamic/Dynamic_User'
+import { ChatLineRound, Service, User, UserFilled, Camera } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const userInfo = ref<UserDTO>()
+const userInfo = ref<Dynamic_User>()
 const avatarUrl = ref('')
-const username = ref('')
 const nickname = ref('')
 const oldPassword = ref('')
 const newPassword = ref('')
@@ -19,10 +18,7 @@ const defaultAvatar = '/logo.jpg'
 // 使用 computed 属性来处理 headers
 const uploadHeaders = computed(() => {
   const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return {}
-  }
+  if (!token) return {}
   return {
     Authorization: token
   }
@@ -41,40 +37,31 @@ onMounted(async () => {
   try {
     const res = await api.userController.userInfo()
     userInfo.value = res
-    username.value = res.username || ''
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''
-    console.log('获取到的用户信息:', res)
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
   }
 })
 
 const handleAvatarSuccess = async (response: any) => {
-  console.log('上传响应:', response)
   try {
-    // 准备更新的用户数据
     const updateData = {
       id: userInfo.value?.id,
       phone: userInfo.value?.phone,
       nickname: nickname.value,
       avatar: response.url,
       gender: userInfo.value?.gender
-    }
-    console.log('更新数据:', updateData)
-
+    } satisfies Dynamic_User
     await api.userController.updateUser({
       body: updateData
     })
 
-    // // 重新获取用户信息
-     const res = await api.userController.userInfo()
+    const res = await api.userController.userInfo()
     userInfo.value = res
     avatarUrl.value = response.url
     ElMessage.success('头像更新成功')
   } catch (error: any) {
-    console.error('更新失败:', error)
     ElMessage.error(error.response?.data?.message || '头像更新失败')
   }
 }
@@ -86,35 +73,23 @@ const updateNickname = async () => {
       return
     }
 
-    console.log('准备更新昵称:', nickname.value)
-
     const updateData = {
       id: userInfo.value.id,
       nickname: nickname.value,
       phone: userInfo.value.phone,
       avatar: avatarUrl.value || userInfo.value?.avatar,
-      gender: userInfo.value?.gender || null
-    }
-
-    console.log('发送的更新数据:', updateData)
+      gender: userInfo.value?.gender
+    } satisfies Dynamic_User
 
     const res = await api.userController.updateUser({
       body: updateData
     })
 
-    // // // 重新获取用户信息
-    // const res = await api.userController.userInfo()
     userInfo.value = res
     nickname.value = res.nickname || ''
     avatarUrl.value = res.avatar || ''
     ElMessage.success('昵称更新成功')
   } catch (error: any) {
-    console.error('更新失败:', {
-      error,
-      response: error.response,
-      data: error.response?.data,
-      message: error.response?.data?.message
-    })
     ElMessage.error(error.response?.data?.message || '昵称更新失败')
   }
 }
@@ -152,8 +127,7 @@ const deleteAccount = async () => {
     router.push('/login')
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.warning('账号注销成功')
-      router.push('/login')
+      ElMessage.error('账号注销失败')
     }
   }
 }

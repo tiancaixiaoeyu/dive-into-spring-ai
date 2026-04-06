@@ -11,7 +11,8 @@ import {
   type FormInstance,
   type FormRules
 } from 'element-plus'
-import { onMounted, reactive, ref, Transition } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import logo from '@/assets/logo.jpg'
 import router from '@/router'
 import background from '@/assets/Background.jpg'
@@ -21,7 +22,10 @@ import type { UserLoginInput } from '@/apis/__generated/model/static'
 const loginForm = reactive<UserLoginInput>({ phone: '', password: '' })
 const ruleFormRef = ref<FormInstance>()
 const rules = reactive<FormRules<typeof loginForm>>({
-  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { len: 11, message: '手机号必须是十一位' }],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { len: 11, message: '手机号必须是十一位' }
+  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { max: 16, min: 6, message: '密码长度介于6，16' }
@@ -29,15 +33,30 @@ const rules = reactive<FormRules<typeof loginForm>>({
 })
 const showPanel = ref(false)
 onMounted(() => {
+  if (localStorage.getItem('token')) {
+    router.replace({ path: '/' })
+    return
+  }
   setTimeout(() => {
     showPanel.value = true
   }, 1000)
 })
 const handleLogin = async () => {
-  const res = await api.userController.login({ body: loginForm })
-  localStorage.setItem('token', res.tokenValue)
-  localStorage.setItem('userId', res.loginId) // 改用 loginId
-  await router.replace({ path: '/' })
+  if (!ruleFormRef.value) {
+    return
+  }
+  const valid = await ruleFormRef.value.validate().catch(() => false)
+  if (!valid) {
+    return
+  }
+  try {
+    const res = await api.userController.login({ body: loginForm })
+    localStorage.setItem('token', res.tokenValue)
+    localStorage.setItem('userId', res.loginId)
+    await router.replace({ path: '/' })
+  } catch {
+    ElMessage.error('登录失败，请检查手机号和密码')
+  }
 }
 </script>
 <template>
@@ -64,10 +83,10 @@ const handleLogin = async () => {
                   label-position="top"
                   label-width="100px"
                 >
-                  <el-form-item label="手机号">
+                  <el-form-item label="手机号" prop="phone">
                     <el-input v-model="loginForm.phone"></el-input>
                   </el-form-item>
-                  <el-form-item label="密码">
+                  <el-form-item label="密码" prop="password">
                     <el-input v-model="loginForm.password" type="password"></el-input>
                   </el-form-item>
                 </el-form>

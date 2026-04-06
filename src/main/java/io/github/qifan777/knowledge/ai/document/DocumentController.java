@@ -1,29 +1,27 @@
 package io.github.qifan777.knowledge.ai.document;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Flux;
 
+import java.io.File;
 import java.util.List;
+import java.util.UUID;
 
 @RequestMapping("document")
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DocumentController {
     private final VectorStore vectorStore;
+    @Value("${upload.path}")
+    private String uploadPath;
 
     /**
      * 嵌入文件
@@ -34,24 +32,28 @@ public class DocumentController {
     @SneakyThrows
     @PostMapping("embedding")
     public Boolean embedding(@RequestParam MultipartFile file) {
-        // 从IO流中读取文件
-        TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(new InputStreamResource(file.getInputStream()));
-        // 将文本内容划分成更小的块
+        String originalFilename = file.getOriginalFilename() == null ? "document.txt" : file.getOriginalFilename();
+        String extension = originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : ".txt";
+        String storedFilename = UUID.randomUUID() + extension;
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+        File destFile = new File(uploadDir, storedFilename);
+        file.transferTo(destFile);
+        TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(new FileSystemResource(destFile));
         List<Document> splitDocuments = new TokenTextSplitter()
                 .apply(tikaDocumentReader.read());
-        // 存入向量数据库，这个过程会自动调用embeddingModel,将文本变成向量再存入。
+        for (int i = 0; i < splitDocuments.size(); i++) {
+            Document document = splitDocuments.get(i);
+            document.getMetadata().put("source", originalFilename);
+            document.getMetadata().put("sourceUrl", "/uploads/" + storedFilename);
+            document.getMetadata().put("chunkIndex", String.valueOf(i + 1));
+            document.getMetadata().put("sourceType", "upload");
+        }
         vectorStore.add(splitDocuments);
         return true;
     }
-
-
-    private final ChatModel chatModel;
-
-    /**
-     * 从向量数据库中查找文档，并将查询的文档作为上下文回答。
-     *
-     * @param prompt 用户的提问
-     * @return SSE流响应
-     */
-
 }

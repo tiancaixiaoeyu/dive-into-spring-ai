@@ -1,6 +1,5 @@
 package io.github.qifan777.knowledge.ai.aiMessage;
 
-import io.github.qifan777.knowledge.infrastructure.jimmer.BaseDateTime;
 import io.github.qifan777.knowledge.infrastructure.jimmer.BaseEntity;
 import io.github.qifan777.knowledge.ai.session.AiSession;
 import jakarta.validation.constraints.Null;

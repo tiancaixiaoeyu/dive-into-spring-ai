@@ -41,90 +41,73 @@ const handleDeleteSession = () => {
 
 <style lang="scss" scoped>
 .session-item {
-  /* 加一下padding不要让会话内容靠边界太近 */
   padding: 12px;
-  background-color: white;
-  /* 给边界一些圆角看起来圆润一些 */
-  border-radius: 10px;
-  /* 固定宽度 */
+  background: linear-gradient(135deg, rgba(35, 58, 109, 0.56), rgba(14, 24, 57, 0.84));
+  border-radius: 14px;
   width: 250px;
-  /* 当鼠标放在会话上时改变鼠标的样式，暗示用户可以点击。目前还没做拖动的效果，以后会做。 */
-  cursor: grab;
-  /* 父相子绝，父元素是相对布局的情况下，子元素的绝对布局是相当于父元素绝对布局。 */
+  cursor: pointer;
   position: relative;
-  /* 子元素的遮罩一开始会在外面，让溢出的遮罩不显示 */
   overflow: hidden;
+  border: 1px solid rgba(122, 224, 255, 0.22);
+  box-shadow:
+    inset 0 0 18px rgba(106, 240, 255, 0.08),
+    0 6px 16px rgba(0, 0, 0, 0.24);
 
   .name {
-    /* 会话名称字体要大一些 */
     font-size: 14px;
-    /* 凸显名称，加粗 */
     font-weight: 700;
     width: 200px;
-    /* 加粗后颜色淡一些 */
-    color: rgba(black, 0.8);
+    color: #d8f4ff;
   }
 
   .count-time {
-    /* 增加一些距离 */
     margin-top: 10px;
-    /* 让字体小一些不能比会话名称要大（14px） */
     font-size: 10px;
-    color: rgba(black, 0.5);
-    /* 让消息数量和最近更新时间显示水平显示 */
+    color: rgba(177, 221, 255, 0.76);
     display: flex;
-    /* 让消息数量和最近更新时间分布在水平方向的两端 */
     justify-content: space-between;
   }
 
-  /* 当处于激活状态时增加蓝色描边 */
   &.active {
-    /* 增加一些过渡 */
-    transition: all 0.12s linear;
-    border: 2px solid #1d93ab;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(106, 247, 255, 0.72);
+    box-shadow:
+      inset 0 0 22px rgba(101, 246, 255, 0.22),
+      0 0 24px rgba(255, 90, 212, 0.24),
+      0 0 12px rgba(88, 232, 255, 0.24);
+    background: linear-gradient(135deg, rgba(47, 73, 136, 0.66), rgba(17, 28, 62, 0.94)),
+      radial-gradient(circle at 86% 12%, rgba(255, 92, 223, 0.2), transparent 42%);
   }
 
-  /* 当鼠标放在会话上时触发下面的css样式*/
   &:hover {
-    /* 遮罩入场，从最左侧滑进去，渐渐变得不透明 */
     .mask {
       opacity: 1;
       left: 0;
     }
 
     .btn-wrapper {
-      /* 暗示用户这个按钮可以点击 */
       &:hover {
         cursor: pointer;
       }
 
-      /* 按钮入场，从最右侧滑进去，渐渐变得不透明 */
       opacity: 1;
       right: 20px;
     }
   }
 
   .mask {
-    /* 渐变样式 */
     transition: all 0.2s ease-out;
-    /* 相当于父亲绝对布局 */
     position: absolute;
-    background-color: rgba(black, 0.05);
-    /* 和父亲元素一样宽盖住父元素 */
+    background: linear-gradient(120deg, rgba(106, 241, 255, 0.15), rgba(255, 100, 219, 0.15));
     width: 100%;
-    /* 和父亲元素一样高 */
     height: 100%;
-    /*位置移到父元素的最上面 */
     top: 0;
-    /* 向父元素的最左侧再增加一个父亲元素当前宽度的距离 */
     left: -100%;
-    /* 透明度为0 */
     opacity: 0;
   }
 
-  /* 删除按钮样式的逻辑和mask类似 */
   .btn-wrapper {
-    color: rgba(black, 0.5);
+    color: rgba(178, 227, 255, 0.9);
     transition: all 0.2s ease-out;
     position: absolute;
     top: 10px;
@@ -134,6 +117,12 @@ const handleDeleteSession = () => {
 
     .edit {
       margin-right: 5px;
+    }
+    :deep(.close:hover) {
+      color: #71fcff;
+      text-shadow:
+        0 0 6px rgba(113, 252, 255, 0.8),
+        0 0 14px rgba(255, 96, 212, 0.46);
     }
   }
 }

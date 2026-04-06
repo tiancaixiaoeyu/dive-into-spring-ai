@@ -1,4 +1,4 @@
-<script lang="tsx" setup>
+<script lang="ts" setup>
 import TextLoading from './text-loading.vue'
 import logo from '@/assets/logo.jpg'
 import MarkdownMessage from './markdown-message.vue'
@@ -33,7 +33,7 @@ const images = computed(() => {
         <el-avatar :src="logo" class="avatar" shape="square" v-else />
       </div>
       <!-- 发送的消息或者回复的消息 -->
-      <div class="message">
+      <div :class="['message', message.type === 'USER' ? 'user-bubble' : 'assistant-bubble']">
         <!-- 如果消息是文本，用markdown展示 -->
         <markdown-message
           :type="message.type"
@@ -59,52 +59,112 @@ const images = computed(() => {
 <style lang="scss" scoped>
 .message-row {
   display: flex;
+  margin-bottom: 14px;
+  perspective: 800px;
 
   &.right {
-    // 消息显示在右侧
     justify-content: flex-end;
 
     .row {
-      // 头像也要靠右侧
       .avatar-wrapper {
         display: flex;
         justify-content: flex-end;
       }
 
-      // 用户回复的消息和ChatGPT回复的消息背景颜色做区分
       .message {
-        background-color: rgb(231, 248, 255);
+        background: linear-gradient(140deg, rgba(71, 245, 255, 0.2), rgba(255, 102, 215, 0.16));
         :deep(.md-editor) {
-          background-color: rgb(231, 248, 255);
+          background: transparent;
         }
       }
     }
   }
 
-  // 默认靠左边显示
   .row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
     .avatar-wrapper {
       .avatar {
-        box-shadow: 20px 20px 20px 3px rgba(0, 0, 0, 0.01);
-        margin-bottom: 20px;
+        box-shadow:
+          0 0 0 1px rgba(125, 241, 255, 0.25),
+          0 0 20px rgba(80, 218, 255, 0.2);
+        margin-bottom: 6px;
       }
     }
 
     .message {
       font-size: 15px;
-      padding: 1.5px;
-      // 限制消息展示的最大宽度
+      padding: 2px;
       max-width: 800px;
-      // 圆润一点
-      border-radius: 7px;
-      // 给消息框加一些描边，看起来更加实一些，要不然太扁了轻飘飘的。
-      border: 1px solid rgba(black, 0.1);
-      // 背景颜色
-      background-color: #f4f4f5;
+      border-radius: 14px;
+      border: 1px solid rgba(122, 230, 255, 0.35);
+      background: linear-gradient(145deg, rgba(25, 43, 87, 0.62), rgba(10, 18, 44, 0.86));
+      box-shadow:
+        inset 0 0 18px rgba(102, 243, 255, 0.08),
+        0 8px 24px rgba(0, 0, 0, 0.3),
+        0 0 18px rgba(76, 221, 255, 0.12);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          120deg,
+          transparent 12%,
+          rgba(128, 251, 255, 0.16) 28%,
+          rgba(255, 105, 227, 0.14) 45%,
+          transparent 64%
+        );
+        mix-blend-mode: screen;
+        pointer-events: none;
+      }
 
       .image {
-        width: 600px;
-        height: 600px;
+        width: min(600px, 68vw);
+        height: min(600px, 68vw);
+        border-radius: 12px;
+      }
+
+      :deep(.md-editor-preview-wrapper) {
+        color: #eaf8ff;
+      }
+
+      :deep(.md-editor-preview-wrapper p),
+      :deep(.md-editor-preview-wrapper li),
+      :deep(.md-editor-preview-wrapper blockquote) {
+        color: #eaf8ff;
+      }
+
+      :deep(.md-editor-preview-wrapper code) {
+        background: rgba(8, 18, 45, 0.72);
+        color: #8effff;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+    }
+
+    .assistant-bubble {
+      border-color: rgba(127, 222, 255, 0.3);
+      background: linear-gradient(145deg, rgba(18, 34, 71, 0.82), rgba(8, 15, 35, 0.94));
+    }
+
+    .user-bubble {
+      border-color: rgba(116, 245, 255, 0.46);
+      background: linear-gradient(140deg, rgba(42, 86, 122, 0.82), rgba(32, 51, 98, 0.92));
+      box-shadow:
+        inset 0 0 24px rgba(102, 243, 255, 0.14),
+        0 10px 30px rgba(0, 0, 0, 0.34),
+        0 0 20px rgba(255, 102, 215, 0.18);
+
+      :deep(.md-editor-preview-wrapper),
+      :deep(.md-editor-preview-wrapper p),
+      :deep(.md-editor-preview-wrapper li),
+      :deep(.md-editor-preview-wrapper blockquote) {
+        color: #f7fdff;
       }
     }
   }

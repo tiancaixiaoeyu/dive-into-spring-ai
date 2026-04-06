@@ -390,12 +390,21 @@
 <!--}-->
 <!--</style>-->
 <script lang="ts" setup>
-import { ChatRound, Close, Delete, EditPen } from '@element-plus/icons-vue'
-import { nextTick, onMounted, ref } from 'vue'
+import {
+  ChatLineRound,
+  ChatRound,
+  Close,
+  Delete,
+  EditPen,
+  Service,
+  User
+} from '@element-plus/icons-vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import SessionItem from './components/session-item.vue'
 import { storeToRefs } from 'pinia'
 import { ElIcon, type UploadProps, type UploadUserFile } from 'element-plus'
 import { api } from '@/utils/api-instance'
+import { request } from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { type AiMessage, useChatStore } from './store/chat-store'
 import MessageRow from '@/views/chat/components/message-row.vue'
@@ -440,29 +449,223 @@ type ChatResponse = {
   }
 }
 
+type CitationPayload = {
+  items: Array<{
+    title: string
+    content: string
+    sourceUrl: string
+    chunkIndex: string
+    sourceType: string
+  }>
+}
+
+type ExercisePayload = {
+  type: 'single_choice' | 'fill_blank'
+  stem: string
+  options: string[]
+  answer: string
+  explanation: string
+  extension: string
+}
+
+type ExerciseRecordItem = {
+  id: string
+  question: string
+  userAnswer: string
+  correctAnswer: string
+  correct: boolean
+  exerciseType: string
+  explanation?: string
+  extension?: string
+  gradeLevel?: string
+  mode?: string
+  options?: string[]
+  sessionId: string
+  createdTime: string
+}
+
+type AiMessageParams = {
+  enableVectorStore: boolean
+  enableAgent: boolean
+  enableCitation: boolean
+  mode: 'explain' | 'question' | 'recite' | 'practice'
+  gradeLevel: string
+}
+
 const API_PREFIX = import.meta.env.VITE_API_PREFIX
 const chatStore = useChatStore()
-const { handleDeleteSession, handleUpdateSession, handleClearMessage, handleCreateSession } =
-  chatStore
+const { handleDeleteSession, handleUpdateSession, handleClearMessage } = chatStore
 const { activeSession, sessionList } = storeToRefs(chatStore)
 const messageListRef = ref<InstanceType<typeof HTMLDivElement>>()
 const loading = ref(true)
+const citations = ref<CitationPayload['items']>([])
+const practiceExercise = ref<ExercisePayload | null>(null)
+const practiceAnswer = ref('')
+const practiceSubmitted = ref(false)
+const practiceRecordSaved = ref(false)
+const recentExerciseRecords = ref<ExerciseRecordItem[]>([])
+const wrongExerciseRecords = ref<ExerciseRecordItem[]>([])
+const exercisePanelLoading = ref(false)
+
+const buildAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    return {}
+  }
+  return {
+    token,
+    Authorization: token
+  }
+}
+
+const toSavePayload = (message: AiMessage) => {
+  return {
+    sessionId: message.sessionId,
+    medias: message.medias,
+    textContent: message.textContent,
+    type: message.type
+  }
+}
+
+const loadExerciseRecords = async () => {
+  exercisePanelLoading.value = true
+  try {
+    const [recent, wrong] = await Promise.all([
+      request.get('/exercise-record/user', { params: { limit: 6 } }),
+      request.get('/exercise-record/user', { params: { limit: 6, wrongOnly: true } })
+    ])
+    recentExerciseRecords.value = recent as unknown as ExerciseRecordItem[]
+    wrongExerciseRecords.value = wrong as unknown as ExerciseRecordItem[]
+  } catch {
+    recentExerciseRecords.value = []
+    wrongExerciseRecords.value = []
+  } finally {
+    exercisePanelLoading.value = false
+  }
+}
+
+const saveExerciseRecord = async () => {
+  if (!practiceExercise.value || !activeSession.value || practiceRecordSaved.value) {
+    return
+  }
+  await request.post('/exercise-record', {
+    sessionId: activeSession.value.id,
+    question: practiceExercise.value.stem,
+    userAnswer: practiceAnswer.value.trim(),
+    correctAnswer: practiceExercise.value.answer,
+    correct: exerciseIsCorrect.value,
+    exerciseType: practiceExercise.value.type,
+    explanation: practiceExercise.value.explanation,
+    extension: practiceExercise.value.extension,
+    gradeLevel: options.value.gradeLevel,
+    mode: options.value.mode,
+    options: practiceExercise.value.options
+  })
+  practiceRecordSaved.value = true
+  await loadExerciseRecords()
+}
+
+const modeDescriptions: Record<AiMessageParams['mode'], { title: string; detail: string }> = {
+  explain: {
+    title: '讲解模式',
+    detail: '适合理解诗意、作者情感和考试考点。'
+  },
+  question: {
+    title: '提问模式',
+    detail: '通过追问和引导，让学生自己想出答案。'
+  },
+  recite: {
+    title: '背诵模式',
+    detail: '按首字、关键词、整句逐层提示，适合背诵训练。'
+  },
+  practice: {
+    title: '练习模式',
+    detail: '自动生成小题并给出答案解析，适合课堂巩固。'
+  }
+}
+
+const gradeDescriptions: Record<string, string> = {
+  小学低年级: '表达更口语化，重点讲字面意思和画面感。',
+  小学中年级: '加入基础情感与修辞解释，适合建立赏析意识。',
+  小学高年级: '补充主旨、意境和常见考点，适合综合理解。',
+  初中: '引入文学术语和答题思路，贴近考试表达。'
+}
+
+const resolveCitationUrl = (sourceUrl: string) => {
+  if (!sourceUrl) {
+    return ''
+  }
+  if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) {
+    return sourceUrl
+  }
+  return `${window.location.origin}${API_PREFIX}${sourceUrl}`
+}
+
+const handleOpenCitation = (citation: CitationPayload['items'][number]) => {
+  const url = resolveCitationUrl(citation.sourceUrl)
+  if (!url) {
+    ElMessage.info('当前依据暂无可跳转来源')
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+const handleSubmitExercise = () => {
+  if (!practiceAnswer.value) {
+    ElMessage.warning('请先完成作答')
+    return
+  }
+  practiceSubmitted.value = true
+  saveExerciseRecord().catch(() => {
+    ElMessage.warning('练习记录保存失败')
+  })
+}
+
+const normalizedExerciseAnswer = computed(() => practiceAnswer.value.trim().toUpperCase())
+const exerciseAnswerDisplay = computed(
+  () => practiceExercise.value?.answer.trim().toUpperCase() ?? ''
+)
+const exerciseIsCorrect = computed(
+  () => normalizedExerciseAnswer.value === exerciseAnswerDisplay.value
+)
 
 onMounted(async () => {
-  // 查询自己的聊天会话
-  api.aiSessionController.findByUser().then((res) => {
-    // 讲会话添加到列表中
-    sessionList.value = res.map((row) => {
-      return { ...row, checked: false }
-    })
-    // 默认选中的聊天会话是第一个
+  const token = localStorage.getItem('token')
+  if (!token) {
+    loading.value = false
+    await router.replace('/login')
+    return
+  }
+  try {
+    const res = await api.aiSessionController.findByUser()
+    sessionList.value = res.map((row) => ({
+      ...row,
+      messages: row.messages.map((message) => ({
+        id: message.id,
+        sessionId: message.sessionId,
+        medias: (message.medias ?? []).map((media) => ({
+          type: media.type,
+          data: media.data
+        })),
+        textContent: message.textContent,
+        type: message.type as AiMessage['type'],
+        createdTime: message.createdTime,
+        editedTime: message.editedTime
+      }))
+    }))
     if (sessionList.value.length > 0) {
       activeSession.value = sessionList.value[0]
     } else {
-      chatStore.handleCreateSession({ name: '新的绘画' })
+      await chatStore.handleCreateSession({ name: '新的绘画' })
     }
+    await loadExerciseRecords()
+  } catch {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userId')
+    await router.replace('/login')
+  } finally {
     loading.value = false
-  })
+  }
 })
 
 const isEdit = ref(false)
@@ -506,6 +709,11 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     textContent: '',
     sessionId: activeSession.value.id
   }
+  citations.value = []
+  practiceExercise.value = null
+  practiceAnswer.value = ''
+  practiceSubmitted.value = false
+  practiceRecordSaved.value = false
 
   const form = new FormData()
   // 将消息对象转换为JSON字符串
@@ -526,7 +734,20 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     withCredentials: true,
     start: false, // 禁用自动启动，需要调用stream()方法才能发起请求
     method: 'POST',
-    payload: form
+    headers: buildAuthHeaders(),
+    payload: form as unknown as string
+  } as any)
+
+  evtSource.addEventListener('citation', (event: any) => {
+    const payload = JSON.parse(event.data) as CitationPayload
+    citations.value = payload.items ?? []
+  })
+
+  evtSource.addEventListener('exercise', (event: any) => {
+    practiceExercise.value = JSON.parse(event.data) as ExercisePayload
+    practiceAnswer.value = ''
+    practiceSubmitted.value = false
+    practiceRecordSaved.value = false
   })
 
   evtSource.addEventListener('message', async (event: any) => {
@@ -541,10 +762,8 @@ const handleSendMessage = async (message: { text: string; image: string }) => {
     }
     if (finishReason && finishReason.toLowerCase() == 'stop') {
       evtSource.close()
-      // 保存用户的提问
-      api.aiMessageController.save({ body: chatMessage })
-      // 保存大模型的回复
-      api.aiMessageController.save({ body: responseMessage.value })
+      request.post('/message', toSavePayload(chatMessage))
+      request.post('/message', toSavePayload(responseMessage.value))
     }
   })
 
@@ -563,8 +782,14 @@ const handleSessionCreate = () => {
 
 const options = ref<AiMessageParams>({
   enableVectorStore: false,
-  enableAgent: false
+  enableAgent: false,
+  enableCitation: true,
+  mode: 'explain',
+  gradeLevel: '小学高年级'
 })
+
+const activeModeHint = computed(() => modeDescriptions[options.value.mode])
+const activeGradeHint = computed(() => gradeDescriptions[options.value.gradeLevel] ?? '')
 
 const embeddingLoading = ref(false)
 const onUploadSuccess = () => {
@@ -573,6 +798,11 @@ const onUploadSuccess = () => {
 }
 
 const beforeUpload: UploadProps['beforeUpload'] = () => {
+  if (!localStorage.getItem('token')) {
+    ElMessage.warning('登录状态已失效，请重新登录')
+    router.replace('/login')
+    return false
+  }
   embeddingLoading.value = true
   return true
 }
@@ -582,7 +812,7 @@ const fileList = ref<UploadUserFile[]>([])
 
 <template>
   <div class="home-view">
-    <div class="nav-bar">
+    <div class="nav-bar holo-glass">
       <el-menu mode="horizontal" :router="true" class="custom-menu">
         <el-menu-item index="/">
           <el-icon><ChatLineRound /></el-icon>AI 助手
@@ -611,13 +841,16 @@ const fileList = ref<UploadUserFile[]>([])
         </div>
         <div class="button-wrapper">
           <el-button
+            class="holo-btn"
             style="margin-right: 20px"
             :icon="ChatRound"
             size="small"
             @click="handleSessionCreate"
             >创建会话
           </el-button>
-          <el-button type="danger" size="small" @click="handleLogout">退出登录 </el-button>
+          <el-button class="holo-btn danger" size="small" @click="handleLogout"
+            >退出登录
+          </el-button>
         </div>
       </div>
 
@@ -643,8 +876,64 @@ const fileList = ref<UploadUserFile[]>([])
             </el-icon>
           </div>
         </div>
-        <el-divider :border-style="'solid'" />
+        <el-divider :border-style="'solid'" class="holo-divider" />
         <div ref="messageListRef" class="message-list">
+          <div class="exercise-panel" v-if="practiceExercise">
+            <div class="exercise-title">随堂练习</div>
+            <div class="exercise-stem">{{ practiceExercise.stem }}</div>
+            <div class="exercise-options" v-if="practiceExercise.type === 'single_choice'">
+              <el-radio-group v-model="practiceAnswer" class="exercise-radio-group">
+                <el-radio
+                  v-for="option in practiceExercise.options"
+                  :key="option"
+                  :label="option.charAt(0)"
+                  class="exercise-option"
+                >
+                  {{ option }}
+                </el-radio>
+              </el-radio-group>
+            </div>
+            <div class="exercise-options" v-else>
+              <el-input
+                v-model="practiceAnswer"
+                class="exercise-input"
+                placeholder="请输入你的答案"
+              />
+            </div>
+            <div class="exercise-actions">
+              <el-button class="holo-btn" size="small" @click="handleSubmitExercise"
+                >提交作答</el-button
+              >
+            </div>
+            <div class="exercise-result" v-if="practiceSubmitted">
+              <div :class="['exercise-judge', exerciseIsCorrect ? 'correct' : 'wrong']">
+                {{ exerciseIsCorrect ? '回答正确' : '再想一想' }}
+              </div>
+              <div class="exercise-answer">标准答案：{{ practiceExercise.answer }}</div>
+              <div class="exercise-explanation">解析：{{ practiceExercise.explanation }}</div>
+              <div class="exercise-extension">举一反三：{{ practiceExercise.extension }}</div>
+            </div>
+          </div>
+          <div class="citation-panel" v-if="citations.length">
+            <div class="citation-title">知识依据</div>
+            <div class="citation-list">
+              <div
+                class="citation-card"
+                v-for="(citation, index) in citations"
+                :key="`${citation.title}-${index}`"
+                @click="handleOpenCitation(citation)"
+              >
+                <div class="citation-source">
+                  <span>{{ citation.title }}</span>
+                  <span v-if="citation.chunkIndex" class="citation-meta"
+                    >片段 {{ citation.chunkIndex }}</span
+                  >
+                </div>
+                <div class="citation-content">{{ citation.content }}</div>
+                <div class="citation-link" v-if="citation.sourceUrl">查看来源</div>
+              </div>
+            </div>
+          </div>
           <transition-group name="list" v-if="activeSession">
             <message-row
               v-for="message in activeSession.messages"
@@ -655,22 +944,72 @@ const fileList = ref<UploadUserFile[]>([])
         </div>
         <message-input @send="handleSendMessage" v-if="activeSession"></message-input>
       </div>
-      <div class="option-panel">
+      <div class="option-panel holo-glass">
         <el-form size="small">
           <el-form-item>
             <el-upload
               v-loading="embeddingLoading"
               :action="`${API_PREFIX}/document/embedding`"
+              :headers="buildAuthHeaders()"
               :show-file-list="false"
               :on-success="onUploadSuccess"
               :before-upload="beforeUpload"
             >
-              <el-button type="primary">上传文档</el-button>
+              <el-button class="holo-upload">上传文档</el-button>
             </el-upload>
           </el-form-item>
-          <el-form-item label="知识库">
+          <el-form-item class="knowledge-switch" label="知识库">
             <el-switch v-model="options.enableVectorStore"></el-switch>
           </el-form-item>
+          <el-form-item class="knowledge-switch" label="依据展示">
+            <el-switch v-model="options.enableCitation"></el-switch>
+          </el-form-item>
+          <el-form-item label="教学模式">
+            <el-select v-model="options.mode" style="width: 100%">
+              <el-option label="讲解模式" value="explain" />
+              <el-option label="提问模式" value="question" />
+              <el-option label="背诵模式" value="recite" />
+              <el-option label="练习模式" value="practice" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="学段">
+            <el-select v-model="options.gradeLevel" style="width: 100%">
+              <el-option label="小学低年级" value="小学低年级" />
+              <el-option label="小学中年级" value="小学中年级" />
+              <el-option label="小学高年级" value="小学高年级" />
+              <el-option label="初中" value="初中" />
+            </el-select>
+          </el-form-item>
+          <div class="teaching-hint">
+            <div class="teaching-hint__title">{{ activeModeHint.title }}</div>
+            <div class="teaching-hint__text">{{ activeModeHint.detail }}</div>
+            <div class="teaching-hint__title">当前学段</div>
+            <div class="teaching-hint__text">{{ activeGradeHint }}</div>
+          </div>
+          <div class="record-panel" v-loading="exercisePanelLoading">
+            <div class="record-panel__title">最近练习</div>
+            <div class="record-empty" v-if="!recentExerciseRecords.length">暂无练习记录</div>
+            <div class="record-list" v-else>
+              <div class="record-card" v-for="record in recentExerciseRecords" :key="record.id">
+                <div class="record-card__question">{{ record.question }}</div>
+                <div :class="['record-card__status', record.correct ? 'correct' : 'wrong']">
+                  {{ record.correct ? '已答对' : '待巩固' }}
+                </div>
+                <div class="record-card__meta">你的答案：{{ record.userAnswer }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="record-panel danger-panel" v-loading="exercisePanelLoading">
+            <div class="record-panel__title">错题本</div>
+            <div class="record-empty" v-if="!wrongExerciseRecords.length">当前没有错题</div>
+            <div class="record-list" v-else>
+              <div class="record-card" v-for="record in wrongExerciseRecords" :key="record.id">
+                <div class="record-card__question">{{ record.question }}</div>
+                <div class="record-card__meta">你的答案：{{ record.userAnswer }}</div>
+                <div class="record-card__meta">标准答案：{{ record.correctAnswer }}</div>
+              </div>
+            </div>
+          </div>
         </el-form>
       </div>
     </div>
@@ -678,141 +1017,39 @@ const fileList = ref<UploadUserFile[]>([])
 </template>
 
 <style lang="scss" scoped>
-// .home-view {
-//   width: 100vw;
-//   height: 100vh;
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
+.holo-glass {
+  background: linear-gradient(130deg, rgba(33, 46, 94, 0.45), rgba(14, 19, 44, 0.7));
+  border: 1px solid rgba(97, 222, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 14px 40px rgba(0, 0, 0, 0.45),
+    0 0 22px rgba(62, 232, 255, 0.16);
+  backdrop-filter: blur(16px) saturate(140%);
+}
 
-//   .chat-panel {
-//     display: flex;
-//     background-color: white;
-//     width: 90%;
-//     height: 90%;
-//     box-shadow: 0 0 10px rgba(black, 0.1);
-//     border-radius: 10px;
-
-//     .session-panel {
-//       display: flex;
-//       flex-direction: column;
-//       box-sizing: border-box;
-//       padding: 20px;
-//       position: relative;
-//       border-right: 1px solid rgba(black, 0.07);
-//       background-color: rgb(231, 200, 255);
-//       height: 100%;
-//       /* 标题 */
-//       .title {
-//         margin-top: 20px;
-//         font-size: 20px;
-//       }
-
-//       .session-list {
-//         overflow-y: scroll;
-//         margin: 20px 0;
-//         flex: 1;
-
-//         .session {
-//           /* 每个会话之间留一些间距 */
-//           margin-top: 20px;
-//         }
-
-//         .session:first-child {
-//           margin-top: 0;
-//         }
-//       }
-
-//       .button-wrapper {
-//         /* entity-panel是相对布局，这边的button-wrapper是相对它绝对布局 */
-//         bottom: 20px;
-//         left: 0;
-//         display: flex;
-//         /* 让内部的按钮显示在右侧 */
-//         justify-content: flex-end;
-//         /* 宽度和session-panel一样宽*/
-//         width: 100%;
-
-//         /* 按钮于右侧边界留一些距离 */
-//         .new-session {
-//           margin-right: 20px;
-//         }
-//       }
-//     }
-
-//     /* 右侧消息记录面板*/
-//     .message-panel {
-//       width: 100%;
-//       height: 100%;
-//       display: flex;
-//       flex-direction: column;
-
-//       .header {
-//         padding: 20px 20px 0 20px;
-//         display: flex;
-//         /* 会话名称和编辑按钮在水平方向上分布左右两边 */
-//         justify-content: space-between;
-
-//         /* 前部的标题和消息条数 */
-//         .front {
-//           .title {
-//             color: rgba(black, 0.7);
-//             font-size: 20px;
-//           }
-
-//           .description {
-//             margin-top: 10px;
-//             color: rgba(black, 0.5);
-//           }
-//         }
-
-//         /* 尾部的编辑和取消编辑按钮 */
-//         .rear {
-//           display: flex;
-//           align-items: center;
-//         }
-//       }
-
-//       .message-list {
-//         padding: 15px;
-//         width: 100%;
-//         flex: 1;
-//         box-sizing: border-box;
-//         // 消息条数太多时，溢出部分滚动
-//         overflow-y: scroll;
-//         // 当切换聊天会话时，消息记录也随之切换的过渡效果
-//         .list-enter-active,
-//         .list-leave-active {
-//           transition: all 0.5s ease;
-//         }
-
-//         .list-enter-from,
-//         .list-leave-to {
-//           opacity: 0;
-//           transform: translateX(30px);
-//         }
-//       }
-//     }
-
-//     //  选项面板
-//     .option-panel {
-//       width: 200px;
-//       padding: 20px;
-//       border-left: 1px solid rgba(black, 0.07);
-
-//       .upload {
-//         width: 160px;
-//       }
-//     }
-//   }
-// }
 .nav-bar {
   position: fixed;
   top: 0;
   width: 100%;
   z-index: 1000;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  :deep(.custom-menu) {
+    background: transparent;
+    border-bottom: none;
+  }
+  :deep(.el-menu-item) {
+    color: #9bc7ff;
+    transition: transform 0.25s ease;
+  }
+  :deep(.el-menu-item.is-active) {
+    color: #77f8ff;
+    text-shadow:
+      0 0 8px rgba(94, 250, 255, 0.7),
+      0 0 18px rgba(255, 70, 214, 0.45);
+  }
+  :deep(.el-menu-item:hover) {
+    background: rgba(93, 255, 237, 0.08);
+    transform: translateY(-1px);
+  }
 }
 
 .home-view {
@@ -822,180 +1059,569 @@ const fileList = ref<UploadUserFile[]>([])
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); // 添加渐变背景
+  background: radial-gradient(circle at 15% 20%, rgba(0, 255, 240, 0.2), transparent 40%),
+    radial-gradient(circle at 84% 16%, rgba(255, 70, 214, 0.2), transparent 38%),
+    linear-gradient(145deg, #040812, #090e21 40%, #050918 100%);
+  animation: breathe 6s ease-in-out infinite;
 
   .chat-panel {
     display: flex;
-    background-color: rgba(255, 255, 255, 0.95); // 略微透明
     width: 90%;
     height: 90%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); // 更柔和的阴影
-    border-radius: 20px; // 更圆润的边角
-    backdrop-filter: blur(10px); // 毛玻璃效果
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid rgba(116, 219, 255, 0.2);
+    background: linear-gradient(135deg, rgba(18, 29, 58, 0.85), rgba(7, 11, 28, 0.92));
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.5),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 
     .session-panel {
-      // ... 保持其他属性不变 ...
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
-      padding: 20px;
+      padding: 24px 16px;
       position: relative;
-      border-right: 1px solid rgba(black, 0.07);
-      background-color: rgb(231, 200, 255);
       height: 100%;
-      background: linear-gradient(180deg, #9795f0 0%, #fbc8d4 100%); // 更现代的渐变背景
-      min-width: 260px; // 确保最小宽度
-      border-radius: 20px 0 0 20px; // 左侧圆角
+      min-width: 280px;
+      background: linear-gradient(180deg, rgba(44, 67, 144, 0.5), rgba(15, 22, 52, 0.8)),
+        radial-gradient(circle at 10% 20%, rgba(111, 255, 246, 0.26), transparent 38%);
+      border-right: 1px solid rgba(128, 229, 255, 0.16);
 
       .title {
-        margin-top: 20px;
+        margin-top: 8px;
         font-size: 24px;
-        font-weight: 600;
-        color: white;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // 文字阴影
+        font-weight: 700;
+        color: #d8f5ff;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 14px rgba(102, 245, 255, 0.6);
       }
 
       .session-list {
-        overflow-y: scroll;
+        overflow-y: auto;
         margin: 20px 0;
         flex: 1;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
 
-        // ... 保持其他属性不变 ...
         &::-webkit-scrollbar {
-          width: 6px;
+          width: 8px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background-color: rgba(255, 255, 255, 0.3);
-          border-radius: 3px;
+          background: linear-gradient(180deg, rgba(121, 252, 255, 0.45), rgba(255, 88, 220, 0.45));
+          border-radius: 20px;
         }
 
         .session {
-          transition: transform 0.2s ease; // 添加悬停动画
+          transition: transform 0.24s ease;
 
           &:hover {
-            transform: translateX(5px);
+            transform: translateX(4px) scale(1.01);
           }
         }
       }
 
       .button-wrapper {
-        /* entity-panel是相对布局，这边的button-wrapper是相对它绝对布局 */
-        bottom: 20px;
-        left: 0;
         display: flex;
-        /* 让内部的按钮显示在右侧 */
         justify-content: flex-end;
-        /* 宽度和session-panel一样宽*/
         width: 100%;
+        gap: 10px;
 
-        /* 按钮于右侧边界留一些距离 */
-        .new-session {
-          margin-right: 20px;
-          // ... 保持其他属性不变 ...
-          .el-button {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
+        :deep(.holo-btn) {
+          border: 1px solid rgba(118, 234, 255, 0.36);
+          color: #d0f4ff;
+          background: linear-gradient(135deg, rgba(91, 229, 255, 0.18), rgba(255, 91, 211, 0.16));
+          box-shadow:
+            inset 0 0 12px rgba(122, 250, 255, 0.2),
+            0 0 18px rgba(116, 229, 255, 0.2);
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        }
 
-            &:hover {
-              background: rgba(255, 255, 255, 0.3);
-              transform: translateY(-2px);
-            }
-          }
+        :deep(.holo-btn:hover) {
+          transform: translateY(-2px);
+          box-shadow:
+            inset 0 0 18px rgba(122, 250, 255, 0.32),
+            0 0 24px rgba(255, 91, 211, 0.28);
+        }
+
+        :deep(.holo-btn:active) {
+          transform: scale(0.92);
+          animation: buttonBounce 0.32s ease;
+        }
+
+        :deep(.holo-btn.danger) {
+          border-color: rgba(255, 99, 188, 0.45);
+          background: linear-gradient(135deg, rgba(255, 83, 174, 0.18), rgba(113, 228, 255, 0.12));
         }
       }
     }
 
     .message-panel {
-      width: 70%;
+      width: 100%;
       height: 100%;
       display: flex;
       flex-direction: column;
-      // ... 保持其他属性不变 ...
-      background: rgba(255, 255, 255, 0.5);
+      background: linear-gradient(180deg, rgba(18, 27, 58, 0.65), rgba(10, 15, 38, 0.9)),
+        radial-gradient(circle at 86% 18%, rgba(255, 92, 227, 0.14), transparent 40%);
 
       .header {
+        padding: 22px 24px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         .front {
-          text-align: center;
           .title {
             font-size: 22px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #def7ff;
+            text-shadow: 0 0 12px rgba(108, 245, 255, 0.5);
           }
 
           .description {
-            color: #7f8c8d;
+            color: rgba(180, 225, 255, 0.8);
           }
         }
 
         .rear {
+          display: flex;
+          gap: 12px;
           .el-icon {
-            display: flex;
-            justify-content: flex-end;
-            margin-left: auto;
             cursor: pointer;
             transition: all 0.3s ease;
-            color: #7f8c8d;
+            color: #95d9ff;
+            padding: 8px;
+            border-radius: 12px;
+            background: rgba(67, 113, 180, 0.2);
+            border: 1px solid rgba(118, 229, 255, 0.2);
 
             &:hover {
-              color: #2c3e50;
-              transform: scale(1.1);
+              color: #76f9ff;
+              transform: translateY(-2px);
+              box-shadow: 0 0 16px rgba(85, 246, 255, 0.4);
             }
           }
         }
       }
 
       .message-list {
-        padding: 15px;
+        padding: 12px 18px;
         width: 100%;
         flex: 1;
         box-sizing: border-box;
-        // 消息条数太多时，溢出部分滚动
-        overflow-y: scroll;
-        // 当切换聊天会话时，消息记录也随之切换的过渡效果
+        overflow-y: auto;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        background: linear-gradient(180deg, rgba(10, 19, 42, 0.5), rgba(7, 11, 27, 0.82));
+        border-top: 1px solid rgba(116, 214, 255, 0.14);
+        border-bottom: 1px solid rgba(116, 214, 255, 0.14);
+
         .list-enter-active,
         .list-leave-active {
-          transition: all 0.5s ease;
+          transition: all 0.66s cubic-bezier(0.2, 1.3, 0.35, 1);
         }
-        //... 保持其他属性不变 ...
+        .list-enter-from,
+        .list-leave-to {
+          opacity: 0;
+          transform: translateY(16px) scale(0.96);
+        }
+
+        :deep(.message-row) {
+          animation: cascadeIn 0.6s cubic-bezier(0.24, 1.22, 0.42, 1) both;
+        }
+        :deep(.message-row:nth-child(odd)) {
+          animation-delay: 0.04s;
+        }
+        :deep(.message-row:nth-child(even)) {
+          animation-delay: 0.1s;
+        }
+
         &::-webkit-scrollbar {
-          width: 6px;
+          width: 8px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background-color: rgba(0, 0, 0, 0.1);
-          border-radius: 3px;
+          background: linear-gradient(180deg, rgba(102, 244, 255, 0.58), rgba(255, 98, 220, 0.45));
+          border-radius: 999px;
+        }
+
+        .exercise-panel {
+          margin-bottom: 14px;
+          padding: 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(118, 237, 255, 0.26);
+          background: linear-gradient(145deg, rgba(18, 31, 66, 0.92), rgba(34, 63, 120, 0.42));
+          box-shadow:
+            inset 0 0 20px rgba(103, 245, 255, 0.08),
+            0 0 18px rgba(255, 97, 214, 0.12);
+        }
+
+        .exercise-title {
+          color: #90fbff;
+          font-size: 14px;
+          letter-spacing: 0.08em;
+          margin-bottom: 10px;
+        }
+
+        .exercise-stem {
+          color: #e5faff;
+          font-size: 14px;
+          line-height: 1.7;
+          margin-bottom: 12px;
+        }
+
+        .exercise-radio-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .exercise-option {
+          margin-right: 0;
+          padding: 10px 12px;
+          border-radius: 10px;
+          background: rgba(9, 17, 39, 0.72);
+          border: 1px solid rgba(116, 225, 255, 0.16);
+          color: #def7ff;
+        }
+
+        .exercise-input :deep(.el-input__wrapper) {
+          background: rgba(9, 17, 39, 0.82);
+          box-shadow: inset 0 0 0 1px rgba(116, 225, 255, 0.18);
+        }
+
+        .exercise-actions {
+          margin-top: 12px;
+        }
+
+        .exercise-result {
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(118, 237, 255, 0.16);
+          color: #dff7ff;
+          line-height: 1.7;
+        }
+
+        .exercise-judge {
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+
+        .exercise-judge.correct {
+          color: #83ffcb;
+        }
+
+        .exercise-judge.wrong {
+          color: #ff9fd8;
+        }
+
+        .exercise-answer,
+        .exercise-explanation,
+        .exercise-extension {
+          font-size: 13px;
+        }
+
+        .citation-panel {
+          margin-bottom: 14px;
+          padding: 12px;
+          border-radius: 12px;
+          border: 1px solid rgba(112, 232, 255, 0.28);
+          background: linear-gradient(130deg, rgba(37, 65, 128, 0.45), rgba(14, 24, 55, 0.8));
+        }
+
+        .citation-title {
+          color: #8ff8ff;
+          font-size: 13px;
+          letter-spacing: 0.08em;
+          margin-bottom: 10px;
+        }
+
+        .citation-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .citation-card {
+          border: 1px solid rgba(114, 225, 255, 0.24);
+          border-radius: 10px;
+          padding: 10px;
+          background: rgba(9, 17, 39, 0.7);
+          cursor: pointer;
+          transition:
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+
+        .citation-card:hover {
+          transform: translateY(-1px);
+          border-color: rgba(126, 245, 255, 0.48);
+          box-shadow: 0 0 18px rgba(106, 242, 255, 0.16);
+        }
+
+        .citation-source {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          font-size: 12px;
+          color: #89f9ff;
+          margin-bottom: 6px;
+        }
+
+        .citation-meta {
+          color: rgba(223, 247, 255, 0.72);
+        }
+
+        .citation-content {
+          font-size: 13px;
+          color: #dff7ff;
+          line-height: 1.5;
+        }
+
+        .citation-link {
+          margin-top: 8px;
+          font-size: 12px;
+          color: #7cf4ff;
         }
       }
     }
 
     .option-panel {
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 0 20px 20px 0; // 右侧圆角
-      border-left: 1px solid rgba(0, 0, 0, 0.05);
+      width: 220px;
+      padding: 18px 14px;
+      border-left: 1px solid rgba(112, 212, 255, 0.18);
+      background: linear-gradient(180deg, rgba(25, 39, 81, 0.64), rgba(10, 16, 40, 0.85)),
+        radial-gradient(circle at 80% 30%, rgba(255, 96, 219, 0.18), transparent 38%);
 
-      .el-button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        transition: all 0.3s ease;
-
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
+      :deep(.el-form-item__label) {
+        color: #addfff;
       }
 
-      .el-switch {
-        &.is-checked {
-          .el-switch__core {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-        }
+      :deep(.el-select__wrapper) {
+        background: rgba(12, 20, 47, 0.72);
+        box-shadow: inset 0 0 0 1px rgba(112, 236, 255, 0.12);
+      }
+
+      :deep(.holo-upload) {
+        width: 100%;
+        border: 1px solid rgba(112, 236, 255, 0.42);
+        background: linear-gradient(135deg, rgba(84, 235, 255, 0.26), rgba(255, 95, 217, 0.2));
+        box-shadow:
+          inset 0 0 18px rgba(108, 243, 255, 0.28),
+          0 0 16px rgba(117, 239, 255, 0.2);
+      }
+      :deep(.holo-upload:hover) {
+        transform: translateY(-1px);
+      }
+      :deep(.holo-upload:active) {
+        transform: scale(0.94);
+        animation: buttonBounce 0.3s ease;
+      }
+
+      :deep(.knowledge-switch) {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        padding: 10px 8px;
+      }
+      :deep(.knowledge-switch:active::after) {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background: radial-gradient(
+          circle,
+          rgba(132, 255, 251, 0.55),
+          rgba(255, 109, 223, 0.22),
+          transparent 70%
+        );
+        animation: caustic 0.75s ease-out;
+      }
+      :deep(.el-switch.is-checked .el-switch__core) {
+        background: linear-gradient(135deg, #67f3ff, #ff60cd);
+      }
+
+      .teaching-hint {
+        margin-top: 10px;
+        padding: 12px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(116, 230, 255, 0.2);
+        background: linear-gradient(145deg, rgba(14, 23, 53, 0.82), rgba(30, 54, 103, 0.36));
+      }
+
+      .teaching-hint__title {
+        color: #8ef7ff;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+      }
+
+      .teaching-hint__title + .teaching-hint__title {
+        margin-top: 10px;
+      }
+
+      .teaching-hint__text {
+        color: #dbf7ff;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .record-panel {
+        margin-top: 12px;
+        padding: 12px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(116, 230, 255, 0.18);
+        background: linear-gradient(145deg, rgba(12, 20, 47, 0.88), rgba(23, 40, 84, 0.46));
+      }
+
+      .danger-panel {
+        border-color: rgba(255, 144, 214, 0.18);
+        background: linear-gradient(145deg, rgba(26, 18, 45, 0.88), rgba(71, 27, 86, 0.34));
+      }
+
+      .record-panel__title {
+        color: #8ef7ff;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+      }
+
+      .record-empty {
+        color: rgba(219, 247, 255, 0.7);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .record-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .record-card {
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(116, 230, 255, 0.12);
+        background: rgba(7, 14, 34, 0.72);
+      }
+
+      .record-card__question {
+        color: #e5faff;
+        font-size: 12px;
+        line-height: 1.55;
+        margin-bottom: 6px;
+      }
+
+      .record-card__status {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .record-card__status.correct {
+        color: #7dffc7;
+      }
+
+      .record-card__status.wrong {
+        color: #ff9fd8;
+      }
+
+      .record-card__meta {
+        color: rgba(219, 247, 255, 0.76);
+        font-size: 12px;
+        line-height: 1.5;
       }
     }
+  }
+}
+
+.holo-divider {
+  :deep(.el-divider__text) {
+    background: transparent;
+  }
+  :deep(.el-divider--horizontal) {
+    border-color: rgba(119, 226, 255, 0.2);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    filter: saturate(1.12) brightness(1.07);
+  }
+}
+
+@keyframes cascadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes buttonBounce {
+  0% {
+    transform: scale(0.92);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes caustic {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.4) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4) rotate(18deg);
+  }
+}
+
+@media (max-width: 1280px) {
+  .home-view .chat-panel {
+    width: 96%;
+  }
+  .home-view .chat-panel .option-panel {
+    width: 180px;
+  }
+}
+
+@media (max-width: 980px) {
+  .home-view .chat-panel {
+    flex-direction: row;
+    height: 90vh;
+    min-width: 1200px;
+  }
+  .home-view .chat-panel .session-panel {
+    min-width: 260px;
+    width: auto;
+    max-height: none;
+  }
+  .home-view .chat-panel .option-panel {
+    width: 180px;
+    border-left: 1px solid rgba(112, 212, 255, 0.18);
+    border-top: none;
+  }
+  .home-view .chat-panel .message-panel {
+    min-width: 680px;
+    flex: 1 1 auto;
   }
 }
 </style>
