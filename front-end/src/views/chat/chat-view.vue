@@ -1018,13 +1018,10 @@ const fileList = ref<UploadUserFile[]>([])
 
 <style lang="scss" scoped>
 .holo-glass {
-  background: linear-gradient(130deg, rgba(33, 46, 94, 0.45), rgba(14, 19, 44, 0.7));
-  border: 1px solid rgba(97, 222, 255, 0.16);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 14px 40px rgba(0, 0, 0, 0.45),
-    0 0 22px rgba(62, 232, 255, 0.16);
-  backdrop-filter: blur(16px) saturate(140%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(139, 90, 43, 0.1);
+  box-shadow: 0 4px 20px rgba(139, 90, 43, 0.06);
+  backdrop-filter: blur(12px);
 }
 
 .nav-bar {
@@ -1032,22 +1029,21 @@ const fileList = ref<UploadUserFile[]>([])
   top: 0;
   width: 100%;
   z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.06);
   :deep(.custom-menu) {
     background: transparent;
     border-bottom: none;
   }
   :deep(.el-menu-item) {
-    color: #9bc7ff;
+    color: #5D4037;
     transition: transform 0.25s ease;
   }
   :deep(.el-menu-item.is-active) {
-    color: #77f8ff;
-    text-shadow:
-      0 0 8px rgba(94, 250, 255, 0.7),
-      0 0 18px rgba(255, 70, 214, 0.45);
+    color: #D4804A;
   }
   :deep(.el-menu-item:hover) {
-    background: rgba(93, 255, 237, 0.08);
+    background: rgba(212, 128, 74, 0.06);
     transform: translateY(-1px);
   }
 }
@@ -1059,22 +1055,16 @@ const fileList = ref<UploadUserFile[]>([])
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 15% 20%, rgba(0, 255, 240, 0.2), transparent 40%),
-    radial-gradient(circle at 84% 16%, rgba(255, 70, 214, 0.2), transparent 38%),
-    linear-gradient(145deg, #040812, #090e21 40%, #050918 100%);
-  animation: breathe 6s ease-in-out infinite;
 
   .chat-panel {
     display: flex;
     width: 90%;
     height: 90%;
-    border-radius: 24px;
+    border-radius: 18px;
     overflow: hidden;
-    border: 1px solid rgba(116, 219, 255, 0.2);
-    background: linear-gradient(135deg, rgba(18, 29, 58, 0.85), rgba(7, 11, 28, 0.92));
-    box-shadow:
-      0 24px 60px rgba(0, 0, 0, 0.5),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(139, 90, 43, 0.08);
+    background: white;
+    box-shadow: 0 8px 40px rgba(139, 90, 43, 0.08);
 
     .session-panel {
       display: flex;
@@ -1084,17 +1074,15 @@ const fileList = ref<UploadUserFile[]>([])
       position: relative;
       height: 100%;
       min-width: 280px;
-      background: linear-gradient(180deg, rgba(44, 67, 144, 0.5), rgba(15, 22, 52, 0.8)),
-        radial-gradient(circle at 10% 20%, rgba(111, 255, 246, 0.26), transparent 38%);
-      border-right: 1px solid rgba(128, 229, 255, 0.16);
+      background: #FFF3E8;
+      border-right: 1px solid rgba(139, 90, 43, 0.1);
 
       .title {
         margin-top: 8px;
         font-size: 24px;
         font-weight: 700;
-        color: #d8f5ff;
-        letter-spacing: 0.08em;
-        text-shadow: 0 0 14px rgba(102, 245, 255, 0.6);
+        color: #3D2B1F;
+        letter-spacing: 0.04em;
       }
 
       .session-list {
@@ -1105,11 +1093,11 @@ const fileList = ref<UploadUserFile[]>([])
         overscroll-behavior: contain;
 
         &::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, rgba(121, 252, 255, 0.45), rgba(255, 88, 220, 0.45));
+          background: rgba(139, 90, 43, 0.18);
           border-radius: 20px;
         }
 
@@ -1129,12 +1117,9 @@ const fileList = ref<UploadUserFile[]>([])
         gap: 10px;
 
         :deep(.holo-btn) {
-          border: 1px solid rgba(118, 234, 255, 0.36);
-          color: #d0f4ff;
-          background: linear-gradient(135deg, rgba(91, 229, 255, 0.18), rgba(255, 91, 211, 0.16));
-          box-shadow:
-            inset 0 0 12px rgba(122, 250, 255, 0.2),
-            0 0 18px rgba(116, 229, 255, 0.2);
+          border: 1px solid rgba(212, 128, 74, 0.3);
+          color: #5D4037;
+          background: rgba(212, 128, 74, 0.08);
           transition:
             transform 0.2s ease,
             box-shadow 0.2s ease;
@@ -1142,19 +1127,18 @@ const fileList = ref<UploadUserFile[]>([])
 
         :deep(.holo-btn:hover) {
           transform: translateY(-2px);
-          box-shadow:
-            inset 0 0 18px rgba(122, 250, 255, 0.32),
-            0 0 24px rgba(255, 91, 211, 0.28);
+          background: rgba(212, 128, 74, 0.14);
+          box-shadow: 0 4px 12px rgba(212, 128, 74, 0.15);
         }
 
         :deep(.holo-btn:active) {
-          transform: scale(0.92);
-          animation: buttonBounce 0.32s ease;
+          transform: scale(0.95);
         }
 
         :deep(.holo-btn.danger) {
-          border-color: rgba(255, 99, 188, 0.45);
-          background: linear-gradient(135deg, rgba(255, 83, 174, 0.18), rgba(113, 228, 255, 0.12));
+          border-color: rgba(211, 47, 47, 0.3);
+          color: #C62828;
+          background: rgba(211, 47, 47, 0.06);
         }
       }
     }
@@ -1164,8 +1148,7 @@ const fileList = ref<UploadUserFile[]>([])
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: linear-gradient(180deg, rgba(18, 27, 58, 0.65), rgba(10, 15, 38, 0.9)),
-        radial-gradient(circle at 86% 18%, rgba(255, 92, 227, 0.14), transparent 40%);
+      background: white;
 
       .header {
         padding: 22px 24px 10px;
@@ -1176,12 +1159,12 @@ const fileList = ref<UploadUserFile[]>([])
           .title {
             font-size: 22px;
             font-weight: 600;
-            color: #def7ff;
-            text-shadow: 0 0 12px rgba(108, 245, 255, 0.5);
+            color: #3D2B1F;
           }
 
           .description {
-            color: rgba(180, 225, 255, 0.8);
+            margin-top: 6px;
+            color: rgba(61, 43, 31, 0.55);
           }
         }
 
@@ -1191,16 +1174,16 @@ const fileList = ref<UploadUserFile[]>([])
           .el-icon {
             cursor: pointer;
             transition: all 0.3s ease;
-            color: #95d9ff;
+            color: #8D6E63;
             padding: 8px;
-            border-radius: 12px;
-            background: rgba(67, 113, 180, 0.2);
-            border: 1px solid rgba(118, 229, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(139, 90, 43, 0.06);
+            border: 1px solid rgba(139, 90, 43, 0.1);
 
             &:hover {
-              color: #76f9ff;
+              color: #D4804A;
               transform: translateY(-2px);
-              box-shadow: 0 0 16px rgba(85, 246, 255, 0.4);
+              box-shadow: 0 4px 12px rgba(212, 128, 74, 0.15);
             }
           }
         }
@@ -1215,36 +1198,26 @@ const fileList = ref<UploadUserFile[]>([])
         scroll-behavior: smooth;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
-        background: linear-gradient(180deg, rgba(10, 19, 42, 0.5), rgba(7, 11, 27, 0.82));
-        border-top: 1px solid rgba(116, 214, 255, 0.14);
-        border-bottom: 1px solid rgba(116, 214, 255, 0.14);
+        background: #FEFBF7;
+        border-top: 1px solid rgba(139, 90, 43, 0.08);
+        border-bottom: 1px solid rgba(139, 90, 43, 0.08);
 
         .list-enter-active,
         .list-leave-active {
-          transition: all 0.66s cubic-bezier(0.2, 1.3, 0.35, 1);
+          transition: all 0.5s ease;
         }
         .list-enter-from,
         .list-leave-to {
           opacity: 0;
-          transform: translateY(16px) scale(0.96);
-        }
-
-        :deep(.message-row) {
-          animation: cascadeIn 0.6s cubic-bezier(0.24, 1.22, 0.42, 1) both;
-        }
-        :deep(.message-row:nth-child(odd)) {
-          animation-delay: 0.04s;
-        }
-        :deep(.message-row:nth-child(even)) {
-          animation-delay: 0.1s;
+          transform: translateY(16px);
         }
 
         &::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, rgba(102, 244, 255, 0.58), rgba(255, 98, 220, 0.45));
+          background: rgba(139, 90, 43, 0.18);
           border-radius: 999px;
         }
 
@@ -1252,22 +1225,20 @@ const fileList = ref<UploadUserFile[]>([])
           margin-bottom: 14px;
           padding: 14px;
           border-radius: 14px;
-          border: 1px solid rgba(118, 237, 255, 0.26);
-          background: linear-gradient(145deg, rgba(18, 31, 66, 0.92), rgba(34, 63, 120, 0.42));
-          box-shadow:
-            inset 0 0 20px rgba(103, 245, 255, 0.08),
-            0 0 18px rgba(255, 97, 214, 0.12);
+          border: 1px solid rgba(212, 128, 74, 0.2);
+          background: #FFF8F0;
         }
 
         .exercise-title {
-          color: #90fbff;
+          color: #D4804A;
           font-size: 14px;
-          letter-spacing: 0.08em;
+          font-weight: 600;
+          letter-spacing: 0.04em;
           margin-bottom: 10px;
         }
 
         .exercise-stem {
-          color: #e5faff;
+          color: #3D2B1F;
           font-size: 14px;
           line-height: 1.7;
           margin-bottom: 12px;
@@ -1283,14 +1254,13 @@ const fileList = ref<UploadUserFile[]>([])
           margin-right: 0;
           padding: 10px 12px;
           border-radius: 10px;
-          background: rgba(9, 17, 39, 0.72);
-          border: 1px solid rgba(116, 225, 255, 0.16);
-          color: #def7ff;
+          background: white;
+          border: 1px solid rgba(139, 90, 43, 0.12);
+          color: #3D2B1F;
         }
 
         .exercise-input :deep(.el-input__wrapper) {
-          background: rgba(9, 17, 39, 0.82);
-          box-shadow: inset 0 0 0 1px rgba(116, 225, 255, 0.18);
+          background: white;
         }
 
         .exercise-actions {
@@ -1300,8 +1270,8 @@ const fileList = ref<UploadUserFile[]>([])
         .exercise-result {
           margin-top: 14px;
           padding-top: 12px;
-          border-top: 1px solid rgba(118, 237, 255, 0.16);
-          color: #dff7ff;
+          border-top: 1px solid rgba(139, 90, 43, 0.1);
+          color: #3D2B1F;
           line-height: 1.7;
         }
 
@@ -1311,11 +1281,11 @@ const fileList = ref<UploadUserFile[]>([])
         }
 
         .exercise-judge.correct {
-          color: #83ffcb;
+          color: #2E7D32;
         }
 
         .exercise-judge.wrong {
-          color: #ff9fd8;
+          color: #C62828;
         }
 
         .exercise-answer,
@@ -1328,14 +1298,15 @@ const fileList = ref<UploadUserFile[]>([])
           margin-bottom: 14px;
           padding: 12px;
           border-radius: 12px;
-          border: 1px solid rgba(112, 232, 255, 0.28);
-          background: linear-gradient(130deg, rgba(37, 65, 128, 0.45), rgba(14, 24, 55, 0.8));
+          border: 1px solid rgba(212, 128, 74, 0.2);
+          background: #FFF8F0;
         }
 
         .citation-title {
-          color: #8ff8ff;
+          color: #D4804A;
           font-size: 13px;
-          letter-spacing: 0.08em;
+          font-weight: 600;
+          letter-spacing: 0.04em;
           margin-bottom: 10px;
         }
 
@@ -1346,10 +1317,10 @@ const fileList = ref<UploadUserFile[]>([])
         }
 
         .citation-card {
-          border: 1px solid rgba(114, 225, 255, 0.24);
+          border: 1px solid rgba(139, 90, 43, 0.12);
           border-radius: 10px;
           padding: 10px;
-          background: rgba(9, 17, 39, 0.7);
+          background: white;
           cursor: pointer;
           transition:
             transform 0.2s ease,
@@ -1359,8 +1330,8 @@ const fileList = ref<UploadUserFile[]>([])
 
         .citation-card:hover {
           transform: translateY(-1px);
-          border-color: rgba(126, 245, 255, 0.48);
-          box-shadow: 0 0 18px rgba(106, 242, 255, 0.16);
+          border-color: rgba(212, 128, 74, 0.3);
+          box-shadow: 0 4px 12px rgba(212, 128, 74, 0.1);
         }
 
         .citation-source {
@@ -1368,24 +1339,24 @@ const fileList = ref<UploadUserFile[]>([])
           justify-content: space-between;
           gap: 12px;
           font-size: 12px;
-          color: #89f9ff;
+          color: #D4804A;
           margin-bottom: 6px;
         }
 
         .citation-meta {
-          color: rgba(223, 247, 255, 0.72);
+          color: rgba(61, 43, 31, 0.6);
         }
 
         .citation-content {
           font-size: 13px;
-          color: #dff7ff;
+          color: #5D4037;
           line-height: 1.5;
         }
 
         .citation-link {
           margin-top: 8px;
           font-size: 12px;
-          color: #7cf4ff;
+          color: #D4804A;
         }
       }
     }
@@ -1393,33 +1364,19 @@ const fileList = ref<UploadUserFile[]>([])
     .option-panel {
       width: 220px;
       padding: 18px 14px;
-      border-left: 1px solid rgba(112, 212, 255, 0.18);
-      background: linear-gradient(180deg, rgba(25, 39, 81, 0.64), rgba(10, 16, 40, 0.85)),
-        radial-gradient(circle at 80% 30%, rgba(255, 96, 219, 0.18), transparent 38%);
+      border-left: 1px solid rgba(139, 90, 43, 0.1);
+      background: #FFFAF5;
+      overflow-y: auto;
 
       :deep(.el-form-item__label) {
-        color: #addfff;
-      }
-
-      :deep(.el-select__wrapper) {
-        background: rgba(12, 20, 47, 0.72);
-        box-shadow: inset 0 0 0 1px rgba(112, 236, 255, 0.12);
+        color: #5D4037;
       }
 
       :deep(.holo-upload) {
         width: 100%;
-        border: 1px solid rgba(112, 236, 255, 0.42);
-        background: linear-gradient(135deg, rgba(84, 235, 255, 0.26), rgba(255, 95, 217, 0.2));
-        box-shadow:
-          inset 0 0 18px rgba(108, 243, 255, 0.28),
-          0 0 16px rgba(117, 239, 255, 0.2);
       }
       :deep(.holo-upload:hover) {
         transform: translateY(-1px);
-      }
-      :deep(.holo-upload:active) {
-        transform: scale(0.94);
-        animation: buttonBounce 0.3s ease;
       }
 
       :deep(.knowledge-switch) {
@@ -1428,34 +1385,20 @@ const fileList = ref<UploadUserFile[]>([])
         border-radius: 12px;
         padding: 10px 8px;
       }
-      :deep(.knowledge-switch:active::after) {
-        content: '';
-        position: absolute;
-        inset: -20%;
-        background: radial-gradient(
-          circle,
-          rgba(132, 255, 251, 0.55),
-          rgba(255, 109, 223, 0.22),
-          transparent 70%
-        );
-        animation: caustic 0.75s ease-out;
-      }
-      :deep(.el-switch.is-checked .el-switch__core) {
-        background: linear-gradient(135deg, #67f3ff, #ff60cd);
-      }
 
       .teaching-hint {
         margin-top: 10px;
         padding: 12px 10px;
         border-radius: 12px;
-        border: 1px solid rgba(116, 230, 255, 0.2);
-        background: linear-gradient(145deg, rgba(14, 23, 53, 0.82), rgba(30, 54, 103, 0.36));
+        border: 1px solid rgba(139, 90, 43, 0.1);
+        background: #FFF8F0;
       }
 
       .teaching-hint__title {
-        color: #8ef7ff;
+        color: #D4804A;
         font-size: 12px;
-        letter-spacing: 0.08em;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         margin-bottom: 4px;
       }
 
@@ -1464,7 +1407,7 @@ const fileList = ref<UploadUserFile[]>([])
       }
 
       .teaching-hint__text {
-        color: #dbf7ff;
+        color: #5D4037;
         font-size: 12px;
         line-height: 1.6;
       }
@@ -1473,24 +1416,25 @@ const fileList = ref<UploadUserFile[]>([])
         margin-top: 12px;
         padding: 12px 10px;
         border-radius: 12px;
-        border: 1px solid rgba(116, 230, 255, 0.18);
-        background: linear-gradient(145deg, rgba(12, 20, 47, 0.88), rgba(23, 40, 84, 0.46));
+        border: 1px solid rgba(139, 90, 43, 0.1);
+        background: #FFF8F0;
       }
 
       .danger-panel {
-        border-color: rgba(255, 144, 214, 0.18);
-        background: linear-gradient(145deg, rgba(26, 18, 45, 0.88), rgba(71, 27, 86, 0.34));
+        border-color: rgba(198, 40, 40, 0.15);
+        background: #FFF5F5;
       }
 
       .record-panel__title {
-        color: #8ef7ff;
+        color: #D4804A;
         font-size: 12px;
-        letter-spacing: 0.08em;
+        font-weight: 600;
+        letter-spacing: 0.04em;
         margin-bottom: 10px;
       }
 
       .record-empty {
-        color: rgba(219, 247, 255, 0.7);
+        color: rgba(93, 64, 55, 0.6);
         font-size: 12px;
         line-height: 1.6;
       }
@@ -1504,12 +1448,12 @@ const fileList = ref<UploadUserFile[]>([])
       .record-card {
         padding: 10px;
         border-radius: 10px;
-        border: 1px solid rgba(116, 230, 255, 0.12);
-        background: rgba(7, 14, 34, 0.72);
+        border: 1px solid rgba(139, 90, 43, 0.08);
+        background: white;
       }
 
       .record-card__question {
-        color: #e5faff;
+        color: #3D2B1F;
         font-size: 12px;
         line-height: 1.55;
         margin-bottom: 6px;
@@ -1521,15 +1465,15 @@ const fileList = ref<UploadUserFile[]>([])
       }
 
       .record-card__status.correct {
-        color: #7dffc7;
+        color: #2E7D32;
       }
 
       .record-card__status.wrong {
-        color: #ff9fd8;
+        color: #C62828;
       }
 
       .record-card__meta {
-        color: rgba(219, 247, 255, 0.76);
+        color: rgba(93, 64, 55, 0.7);
         font-size: 12px;
         line-height: 1.5;
       }
@@ -1542,55 +1486,7 @@ const fileList = ref<UploadUserFile[]>([])
     background: transparent;
   }
   :deep(.el-divider--horizontal) {
-    border-color: rgba(119, 226, 255, 0.2);
-  }
-}
-
-@keyframes breathe {
-  0%,
-  100% {
-    filter: saturate(1) brightness(1);
-  }
-  50% {
-    filter: saturate(1.12) brightness(1.07);
-  }
-}
-
-@keyframes cascadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.94);
-  }
-  60% {
-    opacity: 1;
-    transform: translateY(-4px) scale(1.01);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes buttonBounce {
-  0% {
-    transform: scale(0.92);
-  }
-  45% {
-    transform: scale(1.06);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes caustic {
-  0% {
-    opacity: 0.75;
-    transform: scale(0.4) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.4) rotate(18deg);
+    border-color: rgba(139, 90, 43, 0.1);
   }
 }
 
@@ -1616,7 +1512,7 @@ const fileList = ref<UploadUserFile[]>([])
   }
   .home-view .chat-panel .option-panel {
     width: 180px;
-    border-left: 1px solid rgba(112, 212, 255, 0.18);
+    border-left: 1px solid rgba(139, 90, 43, 0.1);
     border-top: none;
   }
   .home-view .chat-panel .message-panel {

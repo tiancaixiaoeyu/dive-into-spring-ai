@@ -251,18 +251,19 @@ const handleLogout = () => {
 <style lang="scss" scoped>
 .profile-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #e6f0ff 0%, #ffffff 100%);
+  background: #FDF8F3;
 
   .custom-menu {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(139, 90, 43, 0.06);
     padding: 0 20px;
 
     :deep(.el-menu-item) {
       font-size: 16px;
       height: 60px;
       line-height: 60px;
+      color: #5D4037;
 
       .el-icon {
         font-size: 20px;
@@ -304,7 +305,7 @@ const handleLogout = () => {
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0, 0, 0, 0.5);
+          background: rgba(61, 43, 31, 0.5);
           border-radius: 50%;
           display: flex;
           flex-direction: column;
@@ -333,10 +334,11 @@ const handleLogout = () => {
         margin: 24px 0 12px;
         font-size: 26px;
         font-weight: 600;
+        color: #3D2B1F;
       }
 
       .user-info {
-        color: #909399;
+        color: #8D6E63;
         font-size: 16px;
       }
 
@@ -345,12 +347,12 @@ const handleLogout = () => {
         width: 120px;
         font-size: 16px;
         height: 40px;
-        background: linear-gradient(to right, #ff4b2b, #ff416c);
+        background: #C62828;
         border: none;
 
         &:hover {
           transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(255, 75, 43, 0.2);
+          box-shadow: 0 5px 15px rgba(198, 40, 40, 0.2);
         }
       }
     }
@@ -376,6 +378,7 @@ const handleLogout = () => {
         .el-form-item__label {
           font-size: 16px;
           padding-right: 20px;
+          color: #5D4037;
         }
 
         .el-input {
@@ -397,11 +400,12 @@ const handleLogout = () => {
 
   :deep(.el-card) {
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(139, 90, 43, 0.06);
+    border: 1px solid rgba(139, 90, 43, 0.06);
 
     .el-card__header {
       padding: 20px 24px;
-      border-bottom: 1px solid #ebeef5;
+      border-bottom: 1px solid rgba(139, 90, 43, 0.08);
     }
 
     .el-card__body {

@@ -42,41 +42,35 @@ const handleDeleteSession = () => {
 <style lang="scss" scoped>
 .session-item {
   padding: 12px;
-  background: linear-gradient(135deg, rgba(35, 58, 109, 0.56), rgba(14, 24, 57, 0.84));
-  border-radius: 14px;
+  background: #FFFCF8;
+  border-radius: 12px;
   width: 250px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(122, 224, 255, 0.22);
-  box-shadow:
-    inset 0 0 18px rgba(106, 240, 255, 0.08),
-    0 6px 16px rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(139, 90, 43, 0.08);
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.04);
+  transition: all 0.2s ease;
 
   .name {
     font-size: 14px;
     font-weight: 700;
     width: 200px;
-    color: #d8f4ff;
+    color: rgba(61, 43, 31, 0.85);
   }
 
   .count-time {
     margin-top: 10px;
     font-size: 10px;
-    color: rgba(177, 221, 255, 0.76);
+    color: rgba(61, 43, 31, 0.55);
     display: flex;
     justify-content: space-between;
   }
 
   &.active {
-    transition: all 0.2s ease;
-    border: 1px solid rgba(106, 247, 255, 0.72);
-    box-shadow:
-      inset 0 0 22px rgba(101, 246, 255, 0.22),
-      0 0 24px rgba(255, 90, 212, 0.24),
-      0 0 12px rgba(88, 232, 255, 0.24);
-    background: linear-gradient(135deg, rgba(47, 73, 136, 0.66), rgba(17, 28, 62, 0.94)),
-      radial-gradient(circle at 86% 12%, rgba(255, 92, 223, 0.2), transparent 42%);
+    transition: all 0.15s linear;
+    border: 2px solid #D4804A;
+    box-shadow: 0 4px 12px rgba(212, 128, 74, 0.12);
   }
 
   &:hover {
@@ -98,7 +92,7 @@ const handleDeleteSession = () => {
   .mask {
     transition: all 0.2s ease-out;
     position: absolute;
-    background: linear-gradient(120deg, rgba(106, 241, 255, 0.15), rgba(255, 100, 219, 0.15));
+    background: rgba(139, 90, 43, 0.04);
     width: 100%;
     height: 100%;
     top: 0;
@@ -107,7 +101,7 @@ const handleDeleteSession = () => {
   }
 
   .btn-wrapper {
-    color: rgba(178, 227, 255, 0.9);
+    color: rgba(61, 43, 31, 0.5);
     transition: all 0.2s ease-out;
     position: absolute;
     top: 10px;
@@ -119,10 +113,7 @@ const handleDeleteSession = () => {
       margin-right: 5px;
     }
     :deep(.close:hover) {
-      color: #71fcff;
-      text-shadow:
-        0 0 6px rgba(113, 252, 255, 0.8),
-        0 0 14px rgba(255, 96, 212, 0.46);
+      color: #C62828;
     }
   }
 }

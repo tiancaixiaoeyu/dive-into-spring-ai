@@ -14,11 +14,27 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 </template>
 
 <style>
+:root {
+  --el-color-primary: #D4804A;
+  --el-color-primary-light-3: #E0A070;
+  --el-color-primary-light-5: #E9BF9E;
+  --el-color-primary-light-7: #F2D8C3;
+  --el-color-primary-light-8: #F6E5D5;
+  --el-color-primary-light-9: #FBF2EB;
+  --el-color-primary-dark-2: #AA663B;
+  --el-border-color: rgba(139, 90, 43, 0.15);
+  --el-border-color-light: rgba(139, 90, 43, 0.1);
+  --el-text-color-primary: #3D2B1F;
+  --el-text-color-regular: #5D4037;
+  --el-text-color-secondary: #8D6E63;
+  --el-text-color-placeholder: #BCAAA4;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  color: #d8f4ff;
-  background: #060a18;
+  color: #3D2B1F;
+  background: #FDF8F3;
   font-family:
     Noto Sans SC,
     SF Pro SC,
@@ -46,7 +62,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(114, 247, 255, 0.56), rgba(255, 100, 218, 0.4));
+  background-color: rgba(139, 90, 43, 0.18);
   border-radius: 20px;
   background-clip: content-box;
   border: 1px solid transparent;

@@ -137,13 +137,13 @@ const handleLogin = async () => {
       .description {
         margin-top: 20px;
         font-size: var(--el-font-size-base);
-        color: var(--el-text-col);
+        color: var(--el-text-color-regular);
       }
 
       .panel-left {
         box-sizing: border-box;
         padding: 30px;
-        background-color: rgb(243, 245, 249);
+        background-color: #FFF3E8;
         width: 50%;
         border-radius: 5px;
       }

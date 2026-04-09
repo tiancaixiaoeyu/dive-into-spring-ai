@@ -79,7 +79,7 @@ watch(
   }
   .key-value-wrapper {
     margin-bottom: 20px;
-    border: rgba(114, 207, 222, 0.5) 1px dashed;
+    border: rgba(212, 128, 74, 0.4) 1px dashed;
     padding: 10px;
     position: relative;
     margin-top: 20px;

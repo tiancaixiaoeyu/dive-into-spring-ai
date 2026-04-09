@@ -146,34 +146,35 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-top: 60px;
   .nav-bar {
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1000;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(139, 90, 43, 0.06);
   }
 
   .chat-panel {
     width: 80%;
     height: 90%;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(139, 90, 43, 0.08);
     display: flex;
     flex-direction: column;
 
     .room-info {
       padding: 20px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(139, 90, 43, 0.08);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: #3D2B1F;
 
       .online-count {
-        color: #666;
+        color: #8D6E63;
       }
     }
 
@@ -182,16 +183,15 @@ onUnmounted(() => {
       width: 100%;
       flex: 1;
       box-sizing: border-box;
-      // 消息条数太多时，溢出部分滚动
       overflow-y: scroll;
+      background: #FEFBF7;
 
-      //... 保持其他属性不变 ...
       &::-webkit-scrollbar {
         width: 6px;
       }
 
       &::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: rgba(139, 90, 43, 0.15);
         border-radius: 3px;
       }
     }
@@ -202,16 +202,17 @@ onUnmounted(() => {
 
     .message-content {
       margin-bottom: 5px;
+      color: #3D2B1F;
     }
 
     .message-time {
       font-size: 12px;
-      color: #999;
+      color: #8D6E63;
     }
 
     .input-area {
       padding: 20px;
-      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      border-top: 1px solid rgba(139, 90, 43, 0.08);
 
       .el-button {
         margin-top: 10px;
@@ -224,15 +225,16 @@ onUnmounted(() => {
 .message-info {
   .sender-name {
     font-size: 12px;
-    color: #666;
+    color: #8D6E63;
     margin-bottom: 4px;
   }
 
   .message-content {
-    background: white;
+    background: #FFF8F0;
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: 8px;
     display: inline-block;
+    color: #3D2B1F;
   }
 }
 
@@ -240,7 +242,8 @@ onUnmounted(() => {
   max-width: 1600px;
   margin: 50px auto;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(139, 90, 43, 0.08);
 }
 </style>

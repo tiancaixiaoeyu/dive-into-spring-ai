@@ -13,7 +13,7 @@
   display: flex;
   // 三个黑点均匀分布在54px中
   justify-content: space-around;
-  color: #000;
+  color: #A67C52;
   width: 54px;
   padding: 15px;
 

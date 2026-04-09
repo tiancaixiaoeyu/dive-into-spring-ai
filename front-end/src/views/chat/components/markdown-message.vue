@@ -31,30 +31,12 @@ const handleClick = (event: MouseEvent) => {
 .markdown-wrap {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: -60%;
-    background: radial-gradient(
-      circle,
-      rgba(116, 248, 255, 0.6),
-      rgba(255, 111, 220, 0.28),
-      transparent 64%
-    );
-    opacity: 0;
-    pointer-events: none;
-  }
-}
-
-.markdown-wrap.flash::after {
-  animation: causticPulse 0.55s ease-out;
+  border-radius: 10px;
 }
 
 :deep(.md-editor-preview-wrapper) {
   padding: 0 10px 2px;
-  color: #dcf6ff;
+  color: #3D2B1F;
 
   .smart-blue-theme p {
     line-height: unset;
@@ -63,23 +45,11 @@ const handleClick = (event: MouseEvent) => {
 
 :deep(.md-editor) {
   background: transparent;
-  color: #dcf6ff;
+  color: #3D2B1F;
 }
 
 :deep(.md-editor-preview-wrapper a) {
-  color: #72f4ff;
+  color: #D4804A;
   text-decoration: underline;
-  text-shadow: 0 0 8px rgba(113, 246, 255, 0.55);
-}
-
-@keyframes causticPulse {
-  0% {
-    opacity: 0.75;
-    transform: scale(0.5);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.22);
-  }
 }
 </style>
